@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "wdt_if.h"
+#include "wdt_cfg.h"
 
 // USER INCLUDE START...
 
@@ -55,7 +56,12 @@
 // USER VARIABLES BEGIN...
 
 /**
- * 	Parameters OS mutex
+ * 	Watchdog handler
+ */
+static WWDG_HandleTypeDef g_wwdg_handler;
+
+/**
+ * 	Watchdog OS mutex
  */
 static osMutexId_t	g_wdt_mutex_id = NULL;
 const osMutexAttr_t g_wdt_mutex_attr =
@@ -90,37 +96,73 @@ wdt_status_t wdt_if_init(void)
 
     // USER CODE START...
 
+    // Set watchdog window timings
+    /**
+     * 	Configure watchdog window
+     *
+     *	@note 	Must be in MILISECONDS!!!!
+     *
+     * 	Unit: ms
+     *
+     *
+     *		TIMINGS
+     *	=========================================
+     * 	[ 	CLOSE WINDOW  	| 	OPEN WINDOW 	]
+     * 	|					|					|
+     * 	|<----close_time--->|<---open_time----->|
+     * 	|<--------------window_time------------>|
+     *
+     */
+    const float32_t	window_time = (float32_t)( WDT_CFG_KICK_PERIOD_TIME_MS * 1.25f );
+    const float32_t	close_time 	= (float32_t)( WDT_CFG_KICK_PERIOD_TIME_MS * 0.25f );
 
-	// Create mutex
-	g_wdt_mutex_id = osMutexNew( &g_wdt_mutex_attr );
+    // Calculate window period
+    // NOTE: WWDT uses APB1 clock which is same as PCLK1!
+    const uint32_t psc		= 3;
+    const uint32_t counter 	= (uint32_t) ((( 2.0f * HAL_RCC_GetPCLK1Freq() * window_time ) / ( 4096.0f * powf( 2.0f, psc ) * 1000.0f )) + 64UL );
+    const uint32_t window 	= counter - ((uint32_t) (( 2.0f * HAL_RCC_GetPCLK1Freq() * close_time ) / ( 4096.0f * powf( 2.0f, psc ) * 1000.f )));
 
-	if ( NULL == g_wdt_mutex_id )
+    // Check calculated configs
+    if 	(	( counter <= 127UL )
+    	&& 	( counter >= 64UL )
+		&&	( window <= 127UL )
+		&&	( window >= 64UL ))
+    {
+		// Enable clock
+		__HAL_RCC_WWDG_CLK_ENABLE();
+
+		// Setup WWDT
+		g_wwdg_handler.Instance 		= WWDG;
+		g_wwdg_handler.Init.Prescaler 	= WWDG_PRESCALER_8;
+		g_wwdg_handler.Init.Window 		= window;
+		g_wwdg_handler.Init.Counter 	= counter;
+		g_wwdg_handler.Init.EWIMode 	= WWDG_EWI_DISABLE;
+
+		// Initialize
+		// NOTE: This will also start the watchdog !!!
+		if ( HAL_OK != HAL_WWDG_Init(&g_wwdg_handler))
+		{
+			status = eWDT_ERROR;
+		}
+
+		// Init OK
+		else
+		{
+			// Create mutex
+			g_wdt_mutex_id = osMutexNew( &g_wdt_mutex_attr );
+
+			if ( NULL == g_wdt_mutex_id )
+			{
+				status = eWDT_ERROR;
+			}
+		}
+	}
+
+    // Invalid configurations
+	else
 	{
 		status = eWDT_ERROR;
 	}
-
-
-    // USER CODE END...
-
-    return status;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
-*		Watchdog platform de-initilization
-*
-* @note     User shall provide definition of that function based 
-*           on used platform!
-*
-* @return		status - Status of operation
-*/
-////////////////////////////////////////////////////////////////////////////////
-wdt_status_t wdt_if_deinit(void)
-{
-    wdt_status_t status = eWDT_OK;
-
-    // USER CODE START...
-
 
     // USER CODE END...
 
@@ -143,6 +185,10 @@ wdt_status_t wdt_if_start(void)
 
     // USER CODE START...
 
+/*    if ( HAL_OK != HAL_WWDG_Init(&g_wwdg_handler))
+	{
+		status = eWDT_ERROR;
+	}*/
 
     // USER CODE END...
 
@@ -165,6 +211,7 @@ wdt_status_t wdt_if_kick(void)
 
     // USER CODE START...
 
+    HAL_WWDG_Refresh( &g_wwdg_handler );
 
     // USER CODE END...
 

@@ -129,10 +129,6 @@ static void wdt_check_task_reports  (void);
 * @return		void
 */
 ////////////////////////////////////////////////////////////////////////////////
-
-// TODO: Remove only debugging
-#include "drivers/peripheral/gpio/gpio.h"
-
 static void wdt_kick_hndl(void)
 {
     uint32_t timestamp = 0UL;
@@ -149,9 +145,6 @@ static void wdt_kick_hndl(void)
         if ( true == g_wdt_ctrl.valid )
         {
             wdt_if_kick();
-
-            // TODO: Remove only debugging
-            gpio_toggle( eGPIO_TP2 );
         }
     }
 
