@@ -61,7 +61,6 @@ typedef struct
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t 	wdt_init					(void);
-wdt_status_t 	wdt_deinit					(void);
 wdt_status_t 	wdt_is_init					(bool * const p_is_init);
 wdt_status_t 	wdt_hndl					(void);
 wdt_status_t 	wdt_start					(void);

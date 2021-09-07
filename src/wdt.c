@@ -413,45 +413,6 @@ wdt_status_t wdt_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog de-initialization
-*
-* @note     Can be performed only after sucseeded initialization
-*
-* @return		status - Status of de-initialization
-*/
-////////////////////////////////////////////////////////////////////////////////
-wdt_status_t wdt_deinit(void)
-{
-    wdt_status_t status = eWDT_OK;
-
-    WDT_ASSERT( true == gb_is_init );
-
-    if ( true == gb_is_init )
-    {
-        status = wdt_if_deinit();
-
-        if ( eWDT_OK == status )
-        {
-            gb_is_init = false;
-            g_wdt_ctrl.start = false;
-            WDT_DBG_PRINT( "WDT de-init success!" );
-        }
-        else
-        {
-            status = eWDT_ERROR_INIT;
-            WDT_DBG_PRINT( "WDT init error: Function wdt_if_deinit() failed..." );
-        }
-    }
-    else
-    {
-        status = eWDT_ERROR_INIT;
-    }
-
-    return status;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-/**
 *		Get watchdog init flag
 *
 * @param[in]    p_is_init   - Pointer to init flag
