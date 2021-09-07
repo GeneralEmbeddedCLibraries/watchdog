@@ -50,21 +50,13 @@
          */
 		struct
 		{
-			uint32_t avg;			    /**<Average report time */
+			uint32_t avg;			   	/**<Average report time */
+			uint32_t sum;			    /**<Average window sum */
 			uint32_t min;			    /**<Minimum report time */
 			uint32_t max;			    /**<Maximum report time */
 		} time;
 
-        /**
-         *  Number of reports within WDT window
-         */
-        struct
-		{
-            uint32_t cur;               /**<Current report counts within WDT win time */
-			uint32_t min;			    /**<Minimum report counts within WDT win time */
-			uint32_t max;			    /**<Maximum report counts within WDT win time */
-		} num_of_reports;
-
+		uint32_t	num_of_reports;		/**<Total number of reports */
 		uint32_t    num_of_samp;	    /**<Number of samples */   
 	} wdt_stats_t;
 
@@ -80,7 +72,7 @@ typedef struct
         wdt_task_t  trace[WDT_TRACE_BUFFER_SIZE];   /**<Trace buffer of task reports */   
     #endif
 
-    uint32_t    last_task_report[eWDT_TASK_NUM_OF]; /**<Timestamp of last task report */
+    uint32_t    report_timestamp[eWDT_TASK_NUM_OF]; /**<Timestamp of last task report */
     uint32_t    last_kick;                          /**<Previous timestamp of kicking the dog */
     bool        valid;                              /**<Everything is OK */
     bool        start;                              /**<Watchdog start flag */
@@ -113,7 +105,7 @@ static void wdt_check_task_reports  (void);
 
 #if ( 1 == WDT_CFG_STATS_EN )
     static void wdt_stats_init          (void);
-    static void wdt_stats_calc          (const wdt_task_t task, const uint32_t timestamp);
+    static void wdt_stats_calc			(const wdt_task_t task, const uint32_t timestamp, const uint32_t timestamp_prev);
     static void wdt_stats_clear_counts  (void);
     static void wdt_stats_clear_timings (void);
     static void wdt_trace_buffer_put    (const wdt_task_t task);
@@ -180,7 +172,7 @@ static void wdt_check_task_reports(void)
         if ( true == gp_wdt_cfg_table[task].enable )
         {
             // Get time from last report
-            time_pass = (uint32_t)((uint32_t) wdt_if_get_systick() - g_wdt_ctrl.last_task_report[task] );
+            time_pass = (uint32_t)((uint32_t) wdt_if_get_systick() - g_wdt_ctrl.report_timestamp[task] );
 
             // Task not reported in specified time
             // Kill me...
@@ -222,24 +214,25 @@ static void wdt_check_task_reports(void)
     * @note     Beside AVG, MIN and MAX report time there is also report trace
     *           buffer for task report histroy check.
     *
-    * @param[in]    task        - Protected task enumeration
-    * @param[in]    timestamp   - Task report current timestamp
+    * @param[in]    task        	- Protected task enumeration
+    * @param[in]    timestamp   	- Task report current timestamp
+    * @param[in]    timestamp_prev  - Previous task report current timestamp
     * @return		void
     */
     ////////////////////////////////////////////////////////////////////////////////
-    static void wdt_stats_calc(const wdt_task_t task, const uint32_t timestamp)
+    static void wdt_stats_calc(const wdt_task_t task, const uint32_t timestamp, const uint32_t timestamp_prev)
     {
+    	const uint32_t timestamp_dlt = (uint32_t) ( timestamp - timestamp_prev );
+
         // Manage time
         g_wdt_ctrl.stats[task].num_of_samp++;
-        g_wdt_ctrl.stats[task].time.avg += timestamp;
-        g_wdt_ctrl.stats[task].time.avg /= g_wdt_ctrl.stats[task].num_of_samp;
-        g_wdt_ctrl.stats[task].time.min = fminl( g_wdt_ctrl.stats[task].time.min, timestamp );
-        g_wdt_ctrl.stats[task].time.max = fmaxl( g_wdt_ctrl.stats[task].time.max, timestamp );
+        g_wdt_ctrl.stats[task].time.sum += timestamp_dlt;
+        g_wdt_ctrl.stats[task].time.avg = (uint32_t) ( g_wdt_ctrl.stats[task].time.sum / g_wdt_ctrl.stats[task].num_of_samp );
+        g_wdt_ctrl.stats[task].time.min = fminl( g_wdt_ctrl.stats[task].time.min, timestamp_dlt );
+        g_wdt_ctrl.stats[task].time.max = fmaxl( g_wdt_ctrl.stats[task].time.max, timestamp_dlt );
 
         // Manage counts
-        g_wdt_ctrl.stats[task].num_of_reports.cur++;
-        g_wdt_ctrl.stats[task].num_of_reports.min = fminl( g_wdt_ctrl.stats[task].num_of_reports.min, g_wdt_ctrl.stats[task].num_of_reports.cur );
-        g_wdt_ctrl.stats[task].num_of_reports.max = fmaxl( g_wdt_ctrl.stats[task].num_of_reports.max, g_wdt_ctrl.stats[task].num_of_reports.cur );
+        g_wdt_ctrl.stats[task].num_of_reports++;
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -261,7 +254,7 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Clear statisctics task report counts
+    *		Clear statistics task report counts
     *
     * @return		void
     */
@@ -272,9 +265,7 @@ static void wdt_check_task_reports(void)
 
         for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
         {
-            g_wdt_ctrl.stats[task_num].num_of_reports.cur = 0;
-            g_wdt_ctrl.stats[task_num].num_of_reports.min = 0;
-            g_wdt_ctrl.stats[task_num].num_of_reports.max = 0;
+            g_wdt_ctrl.stats[task_num].num_of_reports = 0;
         }
     }
 
@@ -292,6 +283,7 @@ static void wdt_check_task_reports(void)
         for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
         {
             g_wdt_ctrl.stats[task_num].time.avg = 0;
+            g_wdt_ctrl.stats[task_num].time.sum = 0;
             g_wdt_ctrl.stats[task_num].time.max = 0;
             g_wdt_ctrl.stats[task_num].time.min = 0xFFFFFFFF;
         }
@@ -511,7 +503,7 @@ wdt_status_t wdt_start(void)
 
         for ( tasks = 0; tasks < eWDT_TASK_NUM_OF; tasks++ )
         {
-            g_wdt_ctrl.last_task_report[tasks] = timestamp;
+            g_wdt_ctrl.report_timestamp[tasks] = timestamp;
         }
 
         // Start WDT 
@@ -564,19 +556,19 @@ wdt_status_t wdt_task_report(const wdt_task_t task)
                 // Get timestamp
                 timestamp = wdt_if_get_systick();
 
-                // Store report timestamp
-                g_wdt_ctrl.last_task_report[task] = timestamp;
-
                 // Perform statistics
                 #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
 
                     // Calculate statistics
-                    wdt_stats_calc( task, timestamp );
+                    wdt_stats_calc( task, timestamp, g_wdt_ctrl.report_timestamp[task] );
 
                     // Put to trace buffer
                     wdt_trace_buffer_put( task );
 
                 #endif
+
+				// Store report timestamp
+				g_wdt_ctrl.report_timestamp[task] = timestamp;
 
                 // Release mutex
                 wdt_if_release_mutex();
