@@ -103,7 +103,7 @@ static wdt_ctrl_t g_wdt_ctrl;
 /**
  *  Pointer to configuration table
  */
-static wdt_cfg_t * gp_wdt_cfg_table = NULL;
+static const wdt_cfg_t * gp_wdt_cfg_table = NULL;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function prototypes
@@ -115,6 +115,7 @@ static void wdt_check_task_reports  (void);
     static void wdt_stats_init          (void);
     static void wdt_stats_calc          (const wdt_task_t task, const uint32_t timestamp);
     static void wdt_stats_clear_counts  (void);
+    static void wdt_stats_clear_timings (void);
     static void wdt_trace_buffer_put    (const wdt_task_t task);
 #endif
 
@@ -155,7 +156,7 @@ static void wdt_kick_hndl(void)
 
         // Clear report counts
         #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-            wdt_clear_stats_counts();
+        	wdt_stats_clear_counts();
         #endif
     }
 }
@@ -176,14 +177,14 @@ static void wdt_check_task_reports(void)
     for ( task = 0; task < eWDT_TASK_NUM_OF; task++ )
     {
         // Is task protection enabled
-        if ( true == gp_wdt_cfg_table[task]->enable )
+        if ( true == gp_wdt_cfg_table[task].enable )
         {
             // Get time from last report
             time_pass = (uint32_t)((uint32_t) wdt_if_get_systick() - g_wdt_ctrl.last_task_report[task] );
 
             // Task not reported in specified time
             // Kill me...
-            if ( time_pass > gp_wdt_cfg_table[task]->timeout )
+            if ( time_pass > gp_wdt_cfg_table[task].timeout )
             {
                 g_wdt_ctrl.valid = false;
                 break;
@@ -207,8 +208,8 @@ static void wdt_check_task_reports(void)
         memset( &g_wdt_ctrl.trace, 0, sizeof( g_wdt_ctrl.trace ));
 
         // Set all timings & counts to zero
-        // TODO: Check that this don't have a side effects...
-        memset( &g_wdt_ctrl.stats, 0, sizeof( g_wdt_ctrl.stats ));
+        wdt_stats_clear_counts();
+        wdt_stats_clear_timings();
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -251,19 +252,8 @@ static void wdt_check_task_reports(void)
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_trace_buffer_put(const wdt_task_t task)
     {
-        // TODO: Select one of the implementation...
-        /*
-        uint32_t i = 0;
-
-        // More each element to higher index to make space for new
-        for ( i = 0; i < ( WDT_TRACE_BUFFER_SIZE - 1); i++ )
-        {
-            g_wdt_ctrl.trace[i+1] = g_wdt_ctrl.trace[i];
-        }
-        */
-
         // Make space for newcommers
-        memcpy( &g_wdt_ctrl.trace[i+1], &g_wdt_ctrl.trace[i], ( WDT_TRACE_BUFFER_SIZE - 1 ));
+        memcpy( &g_wdt_ctrl.trace[1], &g_wdt_ctrl.trace[0], ( WDT_TRACE_BUFFER_SIZE - 1 ));
 
         // Put new to start
         g_wdt_ctrl.trace[0] = task;        
@@ -271,7 +261,7 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Clear task report counts
+    *		Clear statisctics task report counts
     *
     * @return		void
     */
@@ -282,9 +272,28 @@ static void wdt_check_task_reports(void)
 
         for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
         {
-            g_wdt_ctrl.stats[task].num_of_reports.cur = 0;
-            g_wdt_ctrl.stats[task].num_of_reports.min = 0;
-            g_wdt_ctrl.stats[task].num_of_reports.max = 0;
+            g_wdt_ctrl.stats[task_num].num_of_reports.cur = 0;
+            g_wdt_ctrl.stats[task_num].num_of_reports.min = 0;
+            g_wdt_ctrl.stats[task_num].num_of_reports.max = 0;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /**
+    *		Clear statistic timings
+    *
+    * @return		void
+    */
+    ////////////////////////////////////////////////////////////////////////////////
+    static void wdt_stats_clear_timings (void)
+    {
+        uint32_t task_num = 0;
+
+        for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
+        {
+            g_wdt_ctrl.stats[task_num].time.avg = 0;
+            g_wdt_ctrl.stats[task_num].time.max = 0;
+            g_wdt_ctrl.stats[task_num].time.min = 0xFFFFFFFF;
         }
     }
 
@@ -444,8 +453,7 @@ wdt_status_t wdt_is_init(bool * const p_is_init)
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_hndl(void)
 {
-    wdt_status_t    status      = eWDT_OK;
-    uint32_t        last_kick   = 0UL;
+    wdt_status_t status = eWDT_OK;
 
     WDT_ASSERT( true == gb_is_init );
 
@@ -554,10 +562,10 @@ wdt_status_t wdt_task_report(const wdt_task_t task)
             if ( eWDT_OK == wdt_if_aquire_mutex())
             {
                 // Get timestamp
-                timestamp = wdt_if_get_systick()
+                timestamp = wdt_if_get_systick();
 
                 // Store report timestamp
-                g_wdt_ctrl_t.last_report[task] = timestamp;
+                g_wdt_ctrl.last_task_report[task] = timestamp;
 
                 // Perform statistics
                 #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
