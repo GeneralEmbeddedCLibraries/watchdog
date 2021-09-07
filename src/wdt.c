@@ -108,6 +108,7 @@ static void wdt_check_task_reports  (void);
     static void wdt_stats_calc			(const wdt_task_t task, const uint32_t timestamp, const uint32_t timestamp_prev);
     static void wdt_stats_clear_counts  (void);
     static void wdt_stats_clear_timings (void);
+    static void wdt_stats_count_hndl	(void);
     static void wdt_trace_buffer_put    (const wdt_task_t task);
 #endif
 
@@ -145,12 +146,14 @@ static void wdt_kick_hndl(void)
         {
             wdt_if_kick();
         }
-
-        // Clear report counts
-        #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-        	wdt_stats_clear_counts();
-        #endif
     }
+
+    #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
+
+    	// Number of reports count handler
+    	wdt_stats_count_hndl();
+
+    #endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -246,7 +249,15 @@ static void wdt_check_task_reports(void)
     static void wdt_trace_buffer_put(const wdt_task_t task)
     {
         // Make space for newcommers
-        memcpy( &g_wdt_ctrl.trace[1], &g_wdt_ctrl.trace[0], ( WDT_TRACE_BUFFER_SIZE - 1 ));
+       // memcpy( &g_wdt_ctrl.trace[1], &g_wdt_ctrl.trace[0], ( WDT_TRACE_BUFFER_SIZE - 1 ));
+
+        uint32_t i = 0;
+
+        // More each element to higher index to make space for new
+        for ( i = 0; i < ( WDT_TRACE_BUFFER_SIZE - 1); i++ )
+        {
+            g_wdt_ctrl.trace[i+1] = g_wdt_ctrl.trace[i];
+        }
 
         // Put new to start
         g_wdt_ctrl.trace[0] = task;        
@@ -286,6 +297,36 @@ static void wdt_check_task_reports(void)
             g_wdt_ctrl.stats[task_num].time.sum = 0;
             g_wdt_ctrl.stats[task_num].time.max = 0;
             g_wdt_ctrl.stats[task_num].time.min = 0xFFFFFFFF;
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /**
+    *		Handle statistics counts
+    *
+    * @brief	Calculation of number of reports within each task timeout window.
+    *
+    * 			This information is important in order to check how many times task
+    * 			reports within specified timeout period.
+    *
+    * @return		void
+    */
+    ////////////////////////////////////////////////////////////////////////////////
+    static void wdt_stats_count_hndl(void)
+    {
+    			uint32_t task_num = 0;
+        static 	uint32_t timestamp[eWDT_TASK_NUM_OF] = {0};
+
+        for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
+        {
+        	// Timeout window
+            if ((uint32_t)( wdt_if_get_systick() - timestamp[task_num] ) >= gp_wdt_cfg_table[task_num].timeout )
+            {
+            	timestamp[task_num] = wdt_if_get_systick();
+
+            	// Clear number of reports
+            	g_wdt_ctrl.stats[task_num].num_of_reports = 0;
+            }
         }
     }
 

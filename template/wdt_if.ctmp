@@ -28,6 +28,8 @@
 
 // USER INCLUDE START...
 
+#include "stm32f3xx_hal.h"
+#include "cmsis_os2.h"
 
 // USER INCLUDE END...
 
@@ -35,9 +37,34 @@
 // Definitions
 ////////////////////////////////////////////////////////////////////////////////
 
+// USER DEFINITIONS BEGIN...
+
+/**
+ * 	Watchdog mutex timeout
+ *
+ * 	Unit: ms
+ */
+#define WDT_CFG_MUTEX_TIMEOUT_MS				( 10 )
+
+// USER DEFINITIONS END...
+
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
+
+// USER VARIABLES BEGIN...
+
+/**
+ * 	Parameters OS mutex
+ */
+static osMutexId_t	g_wdt_mutex_id = NULL;
+const osMutexAttr_t g_wdt_mutex_attr =
+{
+    .name 		= "watchdog",
+    .attr_bits 	= ( osMutexPrioInherit ),
+};
+
+// USER VARIABLES END...
 
 ////////////////////////////////////////////////////////////////////////////////
 // Function Prototypes
@@ -62,6 +89,15 @@ wdt_status_t wdt_if_init(void)
     wdt_status_t status = eWDT_OK;
 
     // USER CODE START...
+
+
+	// Create mutex
+	g_wdt_mutex_id = osMutexNew( &g_wdt_mutex_attr );
+
+	if ( NULL == g_wdt_mutex_id )
+	{
+		status = eWDT_ERROR;
+	}
 
 
     // USER CODE END...
@@ -151,6 +187,7 @@ uint32_t wdt_if_get_systick(void)
 
     // USER CODE START...
 
+    systick = HAL_GetTick();
 
     // USER CODE END...
 
@@ -164,8 +201,8 @@ uint32_t wdt_if_get_systick(void)
 * @note     User shall provide definition of that function based 
 *           on used platform!
 *
-*           Return /ref eWDT_OK if successfully acquire otherwise 
-*           return /ref eWDT_ERROR
+*           Return eWDT_OK if successfully acquire otherwise
+*           return eWDT_ERROR
 *
 * @return		status - Status of operation
 */
@@ -176,6 +213,14 @@ wdt_status_t wdt_if_aquire_mutex(void)
 
     // USER CODE START...
 
+	if ( osOK == osMutexAcquire( g_wdt_mutex_id, WDT_CFG_MUTEX_TIMEOUT_MS ))
+	{
+		// No action
+	}
+	else
+	{
+		status = eWDT_ERROR;
+	}
 
     // USER CODE END...
 
@@ -201,6 +246,7 @@ wdt_status_t wdt_if_release_mutex(void)
 
     // USER CODE START...
 
+    osMutexRelease( g_wdt_mutex_id );
 
     // USER CODE END...
 

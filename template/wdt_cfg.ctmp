@@ -41,7 +41,7 @@ static const wdt_cfg_t g_wdt_cfg_table[eWDT_TASK_NUM_OF] =
 	//	Task name			Report timeout [ms]	    Enable flag 	
 	// ------------------------------------------------------------------
     { .p_name = "App",      .timeout=100UL,         .enable=true        },
-    { .p_name = "Bg",       .timeout=2000UL,        .enable=true        },
+    { .p_name = "Bg",       .timeout=2500UL,        .enable=true        },
 
 
     // Example for enable usage
