@@ -137,7 +137,7 @@ static void wdt_kick_hndl(void)
     timestamp = wdt_if_get_systick();
 
     // Its time to kick the dog
-    if ((uint32_t)( timestamp - g_wdt_ctrl.last_kick ) >= WDT_CFG_KICK_WINDOW_TIME_MS )
+    if ((uint32_t)( timestamp - g_wdt_ctrl.last_kick ) >= WDT_CFG_KICK_PERIOD_TIME_MS )
     {
         g_wdt_ctrl.last_kick = timestamp;
 
