@@ -5,16 +5,7 @@ Complete module is configurable via configuration and interface file pairs: **wd
 
 ## Dependencies
 ---
-
-#############################
-TODO: CHeck if realy float is needed!!!!
-
-Definition of float32_t must be provided by user. In current implementation it is defined in "*project_config.h*". Just add following statement to your code where it suits the best.
-
-```C
-// Define float
-typedef float float32_t;
-```
+None
 
 
  ## API
@@ -24,7 +15,6 @@ typedef float float32_t;
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
 | **wdt_init** | Initialization of watchdog | wdt_status_t wdt_init(void) |
-| **wdt_deinit** | De-initialization of watchdog | wdt_status_t wdt_deinit(void) |
 | **wdt_is_init** | Get initialization flag | wdt_status_t 	wdt_is_init(bool * const p_is_init) |
 | **wdt_hndl** | Main watchdog handler | wdt_status_t wdt_hndl(void) |
 | **wdt_start** | Start watchdog | wdt_status_t wdt_start(void) |
