@@ -1,0 +1,16 @@
+============================================================
+## Version 1.0.0 (17.09.2021)
+============================================================
+ 
+ Brief:
+ - Initial release
+ 
+ Features: 
+ - Single loop or RTOS task protection
+ - Configuration via single table
+ - Platform independent based on interface
+ - Statistics support
+
+ Todo:
+ - ISR support before reset event
+   

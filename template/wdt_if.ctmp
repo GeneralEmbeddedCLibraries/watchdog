@@ -1,0 +1,324 @@
+// Copyright (c) 2021 Ziga Miklosic
+// All Rights Reserved
+// This software is under MIT licence (https://opensource.org/licenses/MIT)
+////////////////////////////////////////////////////////////////////////////////
+/**
+*@file      wdt_if.c
+*@brief     Watchdog Platform Interface
+*@author    Ziga Miklosic
+*@date      02.09.2021
+*@version   V1.0.0
+*/
+////////////////////////////////////////////////////////////////////////////////
+/*!
+* @addtogroup WATCHDOG CONFIGURATIONS
+* @{ <!-- BEGIN GROUP -->
+*
+* 	Put code that is platform depended inside code block start with
+* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
+*/
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Includes
+////////////////////////////////////////////////////////////////////////////////
+#include <stdint.h>
+#include <stdlib.h>
+#include "wdt_if.h"
+#include "wdt_cfg.h"
+
+// USER INCLUDE START...
+
+#include "stm32f3xx_hal.h"
+#include "cmsis_os2.h"
+
+// USER INCLUDE END...
+
+////////////////////////////////////////////////////////////////////////////////
+// Definitions
+////////////////////////////////////////////////////////////////////////////////
+
+// USER DEFINITIONS BEGIN...
+
+/**
+ * 	Watchdog mutex timeout
+ *
+ * 	Unit: ms
+ */
+#define WDT_CFG_MUTEX_TIMEOUT_MS				( 10 )
+
+// USER DEFINITIONS END...
+
+////////////////////////////////////////////////////////////////////////////////
+// Variables
+////////////////////////////////////////////////////////////////////////////////
+
+// USER VARIABLES BEGIN...
+
+/**
+ * 	Watchdog handler
+ */
+static WWDG_HandleTypeDef g_wwdg_handler;
+
+/**
+ * 	Watchdog OS mutex
+ */
+static osMutexId_t	g_wdt_mutex_id = NULL;
+const osMutexAttr_t g_wdt_mutex_attr =
+{
+    .name 		= "watchdog",
+    .attr_bits 	= ( osMutexPrioInherit ),
+};
+
+// USER VARIABLES END...
+
+////////////////////////////////////////////////////////////////////////////////
+// Function Prototypes
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Watchdog platform initilization
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+* @return		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_if_init(void)
+{
+    wdt_status_t status = eWDT_OK;
+
+    // USER CODE START...
+
+    // Set watchdog window timings
+    /**
+     * 	Configure watchdog window
+     *
+     *	@note 	Must be in MILISECONDS!!!!
+     *
+     * 	Unit: ms
+     *
+     *
+     *		TIMINGS
+     *	=========================================
+     * 	[ 	CLOSE WINDOW  	| 	OPEN WINDOW 	]
+     * 	|					|					|
+     * 	|<----close_time--->|<---open_time----->|
+     * 	|<--------------window_time------------>|
+     *
+     * 	Window time is 125% of WDT_CFG_KICK_PERIOD_TIME_MS and
+     * 	close time is 50% of WDT_CFG_KICK_PERIOD_TIME_MS
+     *
+     */
+    const float32_t	window_time = (float32_t)( WDT_CFG_KICK_PERIOD_TIME_MS * 1.25f );
+    const float32_t	close_time 	= (float32_t)( WDT_CFG_KICK_PERIOD_TIME_MS * 0.50f );
+
+    // PSC Calculation Notice: Must be alligned with "g_wwdg_handler.Init.Prescaler"
+    // Additional: 	psc value and "g_wwdg_handler.Init.Prescaler" has different value representation !!!
+    //				psc meas power of two, where "g_wwdg_handler.Init.Prescaler" is defined with macros !!!
+    const uint32_t psc = 3;
+
+    // Calculate window period
+    // NOTE: WWDT uses APB1 clock which is same as PCLK1!
+    const uint32_t counter 	= (uint32_t) ((( 2.0f * HAL_RCC_GetPCLK1Freq() * window_time ) / ( 4096.0f * powf( 2.0f, psc ) * 1000.0f )) + 64UL );
+    const uint32_t window 	= counter - ((uint32_t) (( 2.0f * HAL_RCC_GetPCLK1Freq() * close_time ) / ( 4096.0f * powf( 2.0f, psc ) * 1000.f )));
+
+    // Check calculated configs
+    if 	(	( counter <= 127UL )
+    	&& 	( counter >= 64UL )
+		&&	( window <= 127UL )
+		&&	( window >= 64UL ))
+    {
+		// Enable clock
+		__HAL_RCC_WWDG_CLK_ENABLE();
+
+		// Setup WWDT
+		g_wwdg_handler.Instance 		= WWDG;
+		g_wwdg_handler.Init.Prescaler 	= WWDG_PRESCALER_8;
+		g_wwdg_handler.Init.Window 		= window;
+		g_wwdg_handler.Init.Counter 	= counter;
+		g_wwdg_handler.Init.EWIMode 	= WWDG_EWI_DISABLE;
+
+		// NOTE: WDT is initialized in "wdt_if_start()" function
+
+		// Create mutex
+		g_wdt_mutex_id = osMutexNew( &g_wdt_mutex_attr );
+
+		if ( NULL == g_wdt_mutex_id )
+		{
+			status = eWDT_ERROR;
+		}
+	}
+
+    // Invalid configurations
+	else
+	{
+		status = eWDT_ERROR;
+	}
+
+    // USER CODE END...
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Watchdog platform WDT timer start
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+* @return		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_if_start(void)
+{
+    wdt_status_t status = eWDT_OK;
+
+    // USER CODE START...
+
+    if ( HAL_OK != HAL_WWDG_Init( &g_wwdg_handler ))
+	{
+		status = eWDT_ERROR;
+	}
+
+    // USER CODE END...
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Watchdog platform WDT timer kick
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+* @return		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_if_kick(void)
+{
+    wdt_status_t status = eWDT_OK;
+
+    // USER CODE START...
+
+    HAL_WWDG_Refresh( &g_wwdg_handler );
+
+    // USER CODE END...
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get platform system ticks
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+* @return		systick - System time ticks 
+*/
+////////////////////////////////////////////////////////////////////////////////
+uint32_t wdt_if_get_systick(void)
+{
+    uint32_t systick = 0;
+
+    // USER CODE START...
+
+    systick = HAL_GetTick();
+
+    // USER CODE END...
+
+    return systick;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Get watchdog mutex
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+*           Return eWDT_OK if successfully acquire otherwise
+*           return eWDT_ERROR
+*
+* @return		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_if_aquire_mutex(void)
+{
+    wdt_status_t status = eWDT_OK;
+
+    // USER CODE START...
+
+	if ( osOK == osMutexAcquire( g_wdt_mutex_id, WDT_CFG_MUTEX_TIMEOUT_MS ))
+	{
+		// No action
+	}
+	else
+	{
+		status = eWDT_ERROR;
+	}
+
+    // USER CODE END...
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Release watchdog mutex
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+*           Return /ref eWDT_OK if successfully acquire otherwise 
+*           return /ref eWDT_ERROR
+*
+* @return		status - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_if_release_mutex(void)
+{
+    wdt_status_t status = eWDT_OK;
+
+    // USER CODE START...
+
+    osMutexRelease( g_wdt_mutex_id );
+
+    // USER CODE END...
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*		Watchdog pre-reset ISR 
+*
+* @note     User shall provide definition of that function based 
+*           on used platform!
+*
+*           Also put here /ref wdt_pre_reset_isr_callback if needed!
+*
+*
+* @code     // Example code: TODO:
+*
+* @endcode
+*
+* @return		void
+*/
+////////////////////////////////////////////////////////////////////////////////
+// TODO: ...
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+* @} <!-- END GROUP -->
+*/
+////////////////////////////////////////////////////////////////////////////////
