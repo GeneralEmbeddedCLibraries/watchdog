@@ -90,13 +90,27 @@ typedef enum
 
 /**
  * 	Enable/Disable debug mode
+ *
+ * 	@note	Disable in release!
  */
 #define WDT_CFG_DEBUG_EN						( 1 )
 
+#ifndef DEBUG
+	#undef WDT_CFG_DEBUG_EN
+	#define WDT_CFG_DEBUG_EN 	( 0 )
+#endif
+
 /**
  * 	Enable/Disable assertions
+ *
+ * 	@note 	Disable in release!
  */
 #define WDT_CFG_ASSERT_EN						( 1 )
+
+#ifndef DEBUG
+	#undef WDT_CFG_ASSERT_EN
+	#define WDT_CFG_ASSERT_EN 	( 0 )
+#endif
 
 /**
  * 	Debug communication port macros
