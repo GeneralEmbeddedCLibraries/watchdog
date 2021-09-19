@@ -68,7 +68,7 @@ typedef enum
  *
  * 	Unit: ms
  */
-#define WDT_CFG_KICK_PERIOD_TIME_MS				( 20.0f )
+#define WDT_CFG_KICK_PERIOD_TIME_MS				( 10.0f )
 
 /**
  * 	Maximum timeout time for Watchdog timer
@@ -136,8 +136,15 @@ typedef enum
  * 
  * @note	WDT_CFG_DEBUG_EN macro must be enabled in order
  * 			to support statistics.
+ *
+ * 			Disable in release!
  */
-#define WDT_CFG_STATS_EN						( 1 )
+#define WDT_CFG_STATS_EN						( 0 )
+
+#ifndef DEBUG
+#undef WDT_CFG_STATS_EN
+#define WDT_CFG_STATS_EN	( 0 )
+#endif
 
 /**
  * 	Platform weak definition
