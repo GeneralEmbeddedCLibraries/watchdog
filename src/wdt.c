@@ -182,6 +182,9 @@ static void wdt_check_task_reports(void)
             if ( time_pass > gp_wdt_cfg_table[task].timeout )
             {
                 g_wdt_ctrl.valid = false;
+
+                WDT_DBG_PRINT( "Task %s not reported in time!", gp_wdt_cfg_table[task].p_name );
+
                 break;
             }
         }
