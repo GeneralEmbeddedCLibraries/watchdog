@@ -5,12 +5,18 @@ Complete module is configurable via configuration and interface file pairs: **wd
 
 ## Dependencies
 ---
-None
+Watchdog module is highly dependedt from used embedded platform, therefore user must fill low level WDT handling inside **wdt_if.c/.h**.
 
+
+## **General Embedded C Libraries Ecosystem**
+In order to be part of *General Embedded C Libraries Ecosystem* this module must be placed in following path: 
+
+```
+root/middleware/watchdog/watchdog/"module_space"
+```
 
  ## API
 ---
-
 
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
