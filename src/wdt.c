@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,9 @@
 *@file      wdt.c
 *@brief     Watchdog
 *@author    Ziga Miklosic
-*@date      02.09.2021
-*@version   V1.0.0
+*@email     ziga.miklosic@gmail.com
+*@date      27.08.2023
+*@version   V1.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -182,6 +183,9 @@ static void wdt_check_task_reports(void)
             if ( time_pass > gp_wdt_cfg_table[task].timeout )
             {
                 g_wdt_ctrl.valid = false;
+
+                WDT_DBG_PRINT( "Task %s not reported in time!", gp_wdt_cfg_table[task].p_name );
+
                 break;
             }
         }
