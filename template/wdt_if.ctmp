@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,9 @@
 *@file      wdt_if.c
 *@brief     Watchdog Platform Interface
 *@author    Ziga Miklosic
-*@date      02.09.2021
-*@version   V1.0.0
+*@email     ziga.miklosic@gmail.com
+*@date      27.08.2023
+*@version   V1.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -29,7 +30,9 @@
 
 // USER INCLUDE START...
 
-#include "stm32f3xx_hal.h"
+#include "drivers/peripheral/iwdt/iwdt/src/iwdt.h"
+
+#include "stm32g4xx_hal.h"
 #include "cmsis_os2.h"
 
 // USER INCLUDE END...
@@ -54,11 +57,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // USER VARIABLES BEGIN...
-
-/**
- * 	Watchdog handler
- */
-static WWDG_HandleTypeDef g_wwdg_handler;
 
 /**
  * 	Watchdog OS mutex
@@ -96,71 +94,16 @@ wdt_status_t wdt_if_init(void)
 
     // USER CODE START...
 
-    // Set watchdog window timings
-    /**
-     * 	Configure watchdog window
-     *
-     *	@note 	Must be in MILISECONDS!!!!
-     *
-     * 	Unit: ms
-     *
-     *
-     *		TIMINGS
-     *	=========================================
-     * 	[ 	CLOSE WINDOW  	| 	OPEN WINDOW 	]
-     * 	|					|					|
-     * 	|<----close_time--->|<---open_time----->|
-     * 	|<--------------window_time------------>|
-     *
-     * 	Window time is 125% of WDT_CFG_KICK_PERIOD_TIME_MS and
-     * 	close time is 50% of WDT_CFG_KICK_PERIOD_TIME_MS
-     *
-     */
-    const float32_t	window_time = (float32_t)( WDT_CFG_KICK_PERIOD_TIME_MS * 1.25f );
-    const float32_t	close_time 	= (float32_t)( WDT_CFG_KICK_PERIOD_TIME_MS * 0.50f );
+    // Init mutex
+    g_wdt_mutex_id = osMutexNew( &g_wdt_mutex_attr );
 
-    // PSC Calculation Notice: Must be alligned with "g_wwdg_handler.Init.Prescaler"
-    // Additional: 	psc value and "g_wwdg_handler.Init.Prescaler" has different value representation !!!
-    //				psc meas power of two, where "g_wwdg_handler.Init.Prescaler" is defined with macros !!!
-    const uint32_t psc = 3;
-
-    // Calculate window period
-    // NOTE: WWDT uses APB1 clock which is same as PCLK1!
-    const uint32_t counter 	= (uint32_t) ((( 2.0f * HAL_RCC_GetPCLK1Freq() * window_time ) / ( 4096.0f * powf( 2.0f, psc ) * 1000.0f )) + 64UL );
-    const uint32_t window 	= counter - ((uint32_t) (( 2.0f * HAL_RCC_GetPCLK1Freq() * close_time ) / ( 4096.0f * powf( 2.0f, psc ) * 1000.f )));
-
-    // Check calculated configs
-    if 	(	( counter <= 127UL )
-    	&& 	( counter >= 64UL )
-		&&	( window <= 127UL )
-		&&	( window >= 64UL ))
+    if ( NULL == g_wdt_mutex_id )
     {
-		// Enable clock
-		__HAL_RCC_WWDG_CLK_ENABLE();
+        status = eWDT_ERROR;
+    }
 
-		// Setup WWDT
-		g_wwdg_handler.Instance 		= WWDG;
-		g_wwdg_handler.Init.Prescaler 	= WWDG_PRESCALER_8;
-		g_wwdg_handler.Init.Window 		= window;
-		g_wwdg_handler.Init.Counter 	= counter;
-		g_wwdg_handler.Init.EWIMode 	= WWDG_EWI_DISABLE;
-
-		// NOTE: WDT is initialized in "wdt_if_start()" function
-
-		// Create mutex
-		g_wdt_mutex_id = osMutexNew( &g_wdt_mutex_attr );
-
-		if ( NULL == g_wdt_mutex_id )
-		{
-			status = eWDT_ERROR;
-		}
-	}
-
-    // Invalid configurations
-	else
-	{
-		status = eWDT_ERROR;
-	}
+    // Init LL watchdog driver
+    status = (wdt_status_t) iwdt_init();
 
     // USER CODE END...
 
@@ -183,10 +126,7 @@ wdt_status_t wdt_if_start(void)
 
     // USER CODE START...
 
-    if ( HAL_OK != HAL_WWDG_Init( &g_wwdg_handler ))
-	{
-		status = eWDT_ERROR;
-	}
+    status = (wdt_status_t) iwdt_start();
 
     // USER CODE END...
 
@@ -209,7 +149,7 @@ wdt_status_t wdt_if_kick(void)
 
     // USER CODE START...
 
-    HAL_WWDG_Refresh( &g_wwdg_handler );
+    status = (wdt_status_t) iwdt_kick();
 
     // USER CODE END...
 
@@ -258,13 +198,9 @@ wdt_status_t wdt_if_aquire_mutex(void)
 
     // USER CODE START...
 
-	if ( osOK == osMutexAcquire( g_wdt_mutex_id, WDT_CFG_MUTEX_TIMEOUT_MS ))
+	if ( osOK != osMutexAcquire( g_wdt_mutex_id, WDT_CFG_MUTEX_TIMEOUT_MS ))
 	{
-		// No action
-	}
-	else
-	{
-		status = eWDT_ERROR;
+	    status = eWDT_ERROR;
 	}
 
     // USER CODE END...
