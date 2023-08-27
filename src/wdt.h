@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Ziga Miklosic
+// Copyright (c) 2023 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -6,8 +6,9 @@
 *@file      wdt.h
 *@brief     Watchdog API
 *@author    Ziga Miklosic
-*@date      02.09.2021
-*@version   V1.0.0
+*@email     ziga.miklosic@gmail.com
+*@date      27.08.2023
+*@version   V1.1.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -33,7 +34,7 @@
  * 	Module version
  */
 #define WDT_VER_MAJOR			( 1 )
-#define WDT_VER_MINOR			( 0 )
+#define WDT_VER_MINOR			( 1 )
 #define WDT_VER_DEVELOP			( 0 )
 
 /**
@@ -46,16 +47,6 @@ typedef enum
 	eWDT_ERROR_INIT		= 0x02,		/**<Initialization error  */
 	eWDT_ERROR_CFG		= 0x04,		/**<Settings error */
 } wdt_status_t;
-
-/**
- * 	Watchdog configuration table
- */
-typedef struct
-{
-	const char *	p_name;		/**<Name of protected task */
-	uint32_t		timeout;	/**<Timeout time in ms */
-	bool			enable;		/**<Protection enable/disable */
-} wdt_cfg_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions

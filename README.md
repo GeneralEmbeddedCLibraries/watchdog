@@ -1,12 +1,12 @@
 # Watchdog
-Watchdog module implmentation in C for general embedded platform usage. It support RTOS multi-task as well as super (single) loop protection. 
+Watchdog module is implemented in C language for usage in embedded system in order to ensure system stability and foult-tolerance in single or multi-task environments. 
 
-Complete module is configurable via configuration and interface file pairs: **wdt_cfg.c/.h** and **wdt_if.c/.h**. 
+By incorporating the Watchdog module into multi-task applications, developers can allocate watchdog to individual tasks, ensuring that each task continues to execute within its defined timeframe. This approach prevents any single task from monopolizing system resources or stalling the entire system due to unexpected issues.
 
-For easier debugging statistics are supported in order to tell timings of each protected tasks. Statistics are by default disabled and must be enabled in configuration file. Afterwards can be put into "LiveWatch" inside prefered IDE in order to get stats of each protection task.
+Complete Watchdog module is written to be higly portable, flexible and microcontroller agnostics. This is achieved via configuration and interface file pairs: **wdt_cfg.c/.h** and **wdt_if.c/.h**. Inside that files end-target application specifics are defined.
 
 ## Watchdog Statistics
-For easier detection of missing watchdog reports from tasks, debugging statistics are supported. Statistics are by default disabled and must be enabled in configuration file. In order to enable watchdog statistics enable following macros:
+For easier detection of missing watchdog reports from tasks, debugging statistics are supported. Statistics are by default disabled and must be enabled in configuration file. In order to enable watchdog statistics following macros must be addressed inside *wdt_cfg.h* file:
 
 ```C
 /**
@@ -31,7 +31,6 @@ g_wdt_ctrl.stats
 // Trace buffer of pass 32 watchdog reports 
 g_wdt_ctrl.trace
 ```
-
 
 ## Dependencies
 
