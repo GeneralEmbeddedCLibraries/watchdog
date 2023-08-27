@@ -11,10 +11,13 @@ and this project/module adheres to [Semantic Versioning](https://semver.org/spec
  - Replace old "version.txt" with this changelog
 
 ### Changed
- - Detailed description of readme
+ - Updated readme, adding details of statistics
+ - Hiding configuration data type
+ - Removed doxygen as it is replaced README.md
 
 ### Todo
  - ISR support before reset event
+ - Replace OS mutex with simple lock inside module
 
 ---
 ## V1.0.0 - 17.09.2021
