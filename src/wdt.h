@@ -56,6 +56,8 @@ wdt_status_t 	wdt_is_init					(bool * const p_is_init);
 wdt_status_t 	wdt_hndl					(void);
 wdt_status_t 	wdt_start					(void);
 wdt_status_t 	wdt_task_report				(const wdt_task_opt_t task);
+wdt_status_t    wdt_task_set_enable         (const wdt_task_opt_t task, const bool enable);
+wdt_status_t    wdt_task_get_enable         (const wdt_task_opt_t task, bool * const p_enable);
 void			wdt_pre_reset_isr_callback	(void);		
 
 #endif // __WDT_H

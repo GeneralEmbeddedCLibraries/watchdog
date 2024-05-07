@@ -595,6 +595,95 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
+*       Enable/Disable watchdog task
+*
+* @brief    In case protected task is not expected to execute periodically but rather
+*           on rare occasions, then respective wdt task can be disabled and enabled
+*           back on when task is expected to execute.
+*
+* @param[in]    task    - Protected task enumeration
+* @param[in]    enable  - Enable or disable protected task
+* @return       status  - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
+{
+    wdt_status_t status = eWDT_OK;
+
+    WDT_ASSERT( true == gb_is_init );
+    WDT_ASSERT( task < eWDT_TASK_NUM_OF );
+
+    if ( true == gb_is_init )
+    {
+        if ( task < eWDT_TASK_NUM_OF )
+        {
+            // Get mutex
+            if ( eWDT_OK == wdt_if_aquire_mutex())
+            {
+                // Reset task timestamp and enable/disable it
+                g_wdt_ctrl.task[task].report_timestamp  = wdt_if_get_systick();
+                g_wdt_ctrl.task[task].enable            = enable;
+
+                // Release mutex
+                wdt_if_release_mutex();
+            }
+            else
+            {
+                status = eWDT_ERROR;
+            }
+        }
+        else
+        {
+            status = eWDT_ERROR;
+        }
+    }
+    else
+    {
+        status = eWDT_ERROR_INIT;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
+*       Get watchdog task enable state
+*
+* @param[in]    task        - Protected task enumeration
+* @param[out]   p_enable    - State of protected task enable
+* @return       status      - Status of operation
+*/
+////////////////////////////////////////////////////////////////////////////////
+wdt_status_t wdt_task_get_enable(const wdt_task_opt_t task, bool * const p_enable)
+{
+    wdt_status_t status = eWDT_OK;
+
+    WDT_ASSERT( true == gb_is_init );
+    WDT_ASSERT( task < eWDT_TASK_NUM_OF );
+    WDT_ASSERT( NULL != p_enable );
+
+    if ( true == gb_is_init )
+    {
+        if  (   ( task < eWDT_TASK_NUM_OF )
+            &&  ( NULL != p_enable ))
+        {
+            *p_enable = g_wdt_ctrl.task[task].enable;
+        }
+        else
+        {
+            status = eWDT_ERROR;
+        }
+    }
+    else
+    {
+        status = eWDT_ERROR_INIT;
+    }
+
+    return status;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/**
 *		Early wakeup watchdog reset callback
 *
 * @brief    User shall define definition of that function. 
