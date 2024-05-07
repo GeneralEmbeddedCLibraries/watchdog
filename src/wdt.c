@@ -82,7 +82,7 @@ typedef struct
         wdt_task_opt_t  trace[WDT_TRACE_BUFFER_SIZE];   /**<Trace buffer of task reports */
     #endif
 
-   wdt_task_t   task[eWDT_TASK_NUM_OF];     /**<Watchdog tasks */
+    wdt_task_t  task[eWDT_TASK_NUM_OF];     /**<Watchdog tasks */
     uint32_t    last_kick;                  /**<Previous timestamp of kicking the dog */
     bool        valid;                      /**<Everything is OK */
     bool        start;                      /**<Watchdog start flag */
@@ -277,11 +277,9 @@ static void wdt_check_task_reports(void)
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_clear_counts(void)
     {
-        uint32_t task_num = 0;
-
-        for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
+        for ( uint32_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
-            g_wdt_ctrl.stats[task_num].num_of_reports = 0;
+            g_wdt_ctrl.stats[task_it].num_of_reports = 0;
         }
     }
 
@@ -294,14 +292,12 @@ static void wdt_check_task_reports(void)
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_clear_timings (void)
     {
-        uint32_t task_num = 0;
-
-        for ( task_num = 0; task_num < eWDT_TASK_NUM_OF; task_num++ )
+        for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
-            g_wdt_ctrl.stats[task_num].time.avg = 0;
-            g_wdt_ctrl.stats[task_num].time.sum = 0;
-            g_wdt_ctrl.stats[task_num].time.max = 0;
-            g_wdt_ctrl.stats[task_num].time.min = 0xFFFFFFFF;
+            g_wdt_ctrl.stats[task_it].time.avg = 0U;
+            g_wdt_ctrl.stats[task_it].time.sum = 0U;
+            g_wdt_ctrl.stats[task_it].time.max = 0U;
+            g_wdt_ctrl.stats[task_it].time.min = 0xFFFFFFFFU;
         }
     }
 
@@ -319,7 +315,7 @@ static void wdt_check_task_reports(void)
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_count_hndl(void)
     {
-        static 	uint32_t timestamp[eWDT_TASK_NUM_OF] = {0};
+        static uint32_t timestamp[eWDT_TASK_NUM_OF] = {0};
 
         for ( uint32_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
