@@ -60,7 +60,7 @@ typedef enum
 	// USER CODE END...
 
 	eWDT_TASK_NUM_OF
-} wdt_task_t;
+} wdt_task_opt_t;
 
 /**
  * 	Watchdog kick period
