@@ -32,6 +32,11 @@ g_wdt_ctrl.stats
 g_wdt_ctrl.trace
 ```
 
+Example of live expresions of Watchdog statistics inside STM32CubeIDE:
+
+![](doc/pic/stm32cube_livewatch_statistics.png)
+
+
 ## Dependencies
 
 ### **1. Low Level Watchdog Driver**

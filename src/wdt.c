@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Ziga Miklosic
+// Copyright (c) 2024 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      27.08.2023
-*@version   V1.1.0
+*@date      02.07.2023
+*@version   V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -41,25 +41,25 @@
      */
     #define WDT_TRACE_BUFFER_SIZE           ( 32 )
 
-	/**
-	 *	Watchdog task statistics
-	*/
-	typedef struct
-	{
+    /**
+     *    Watchdog task statistics
+    */
+    typedef struct
+    {
         /**
          *  Report time stats 
          */
-		struct
-		{
-			uint32_t avg;			   	/**<Average report time */
-			uint32_t sum;			    /**<Average window sum */
-			uint32_t min;			    /**<Minimum report time */
-			uint32_t max;			    /**<Maximum report time */
-		} time;
+        struct
+        {
+            uint32_t avg;   /**<Average report time */
+            uint32_t sum;   /**<Average window sum */
+            uint32_t min;   /**<Minimum report time */
+            uint32_t max;   /**<Maximum report time */
+        } time;
 
-		uint32_t	num_of_reports;		/**<Total number of reports */
-		uint32_t    num_of_samp;	    /**<Number of samples */   
-	} wdt_stats_t;
+        uint32_t    num_of_reports;     /**<Total number of reports */
+        uint32_t    num_of_samp;        /**<Number of samples */
+    } wdt_stats_t;
 
 #endif
 
@@ -115,10 +115,10 @@ static void wdt_check_task_reports  (void);
 
 #if ( 1 == WDT_CFG_STATS_EN )
     static void wdt_stats_init          (void);
-    static void wdt_stats_calc			(const wdt_task_opt_t task, const uint32_t timestamp, const uint32_t timestamp_prev);
+    static void wdt_stats_calc            (const wdt_task_opt_t task, const uint32_t timestamp, const uint32_t timestamp_prev);
     static void wdt_stats_clear_counts  (void);
     static void wdt_stats_clear_timings (void);
-    static void wdt_stats_count_hndl	(void);
+    static void wdt_stats_count_hndl    (void);
     static void wdt_trace_buffer_put    (const wdt_task_opt_t task);
 #endif
 
@@ -128,7 +128,7 @@ static void wdt_check_task_reports  (void);
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog kicking handler
+*        Watchdog kicking handler
 *
 * @brief    Every "WDT_CFG_KICK_WINDOW_TIME_MS" period of time watchdog will
 *           be kicked if global "g_wdt_ctrl.valid" flag is set.
@@ -136,7 +136,7 @@ static void wdt_check_task_reports  (void);
 *           "g_wdt_ctrl.valid" flag is set only when all protected task are
 *           reported at least once within their specified timeout.
 *
-* @return		void
+* @return        void
 */
 ////////////////////////////////////////////////////////////////////////////////
 static void wdt_kick_hndl(void)
@@ -158,16 +158,16 @@ static void wdt_kick_hndl(void)
     }
 
     #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-    	// Number of reports count handler
-    	wdt_stats_count_hndl();
+        // Number of reports count handler
+        wdt_stats_count_hndl();
     #endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Checker for task reports wihtin specified timeout time
+*        Checker for task reports wihtin specified timeout time
 *
-* @return		void
+* @return        void
 */
 ////////////////////////////////////////////////////////////////////////////////
 static void wdt_check_task_reports(void)
@@ -199,9 +199,9 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Initialize statistics vars
+    *        Initialize statistics vars
     *
-    * @return		void
+    * @return        void
     */
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_init(void)
@@ -216,7 +216,7 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Calculation of protected task stats
+    *        Calculation of protected task stats
     *
     * @brief    For every task report statistics is being obtained for easier
     *           debugging.
@@ -224,15 +224,15 @@ static void wdt_check_task_reports(void)
     * @note     Beside AVG, MIN and MAX report time there is also report trace
     *           buffer for task report histroy check.
     *
-    * @param[in]    task        	- Protected task enumeration
-    * @param[in]    timestamp   	- Task report current timestamp
+    * @param[in]    task            - Protected task enumeration
+    * @param[in]    timestamp       - Task report current timestamp
     * @param[in]    timestamp_prev  - Previous task report current timestamp
-    * @return		void
+    * @return       void
     */
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_calc(const wdt_task_opt_t task, const uint32_t timestamp, const uint32_t timestamp_prev)
     {
-    	const uint32_t timestamp_dlt = (uint32_t) ( timestamp - timestamp_prev );
+        const uint32_t timestamp_dlt = (uint32_t) ( timestamp - timestamp_prev );
 
         // Manage time
         g_wdt_ctrl.stats[task].num_of_samp++;
@@ -247,10 +247,10 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Manage task report trace buffer
+    *        Manage task report trace buffer
     *
     * @param[in]    task    - Protected task enumeration
-    * @return		void
+    * @return       void
     */
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_trace_buffer_put(const wdt_task_opt_t task)
@@ -267,9 +267,9 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Clear statistics task report counts
+    *        Clear statistics task report counts
     *
-    * @return		void
+    * @return        void
     */
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_clear_counts(void)
@@ -282,9 +282,9 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Clear statistic timings
+    *        Clear statistic timings
     *
-    * @return		void
+    * @return        void
     */
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_clear_timings (void)
@@ -300,14 +300,14 @@ static void wdt_check_task_reports(void)
 
     ////////////////////////////////////////////////////////////////////////////////
     /**
-    *		Handle statistics counts
+    *        Handle statistics counts
     *
-    * @brief	Calculation of number of reports within each task timeout window.
+    * @brief    Calculation of number of reports within each task timeout window.
     *
-    * 			This information is important in order to check how many times task
-    * 			reports within specified timeout period.
+    *             This information is important in order to check how many times task
+    *             reports within specified timeout period.
     *
-    * @return		void
+    * @return        void
     */
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_count_hndl(void)
@@ -316,13 +316,13 @@ static void wdt_check_task_reports(void)
 
         for ( uint32_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
-        	// Timeout window
+            // Timeout window
             if ((uint32_t)( wdt_if_get_systick() - timestamp[task_it] ) >= gp_wdt_cfg_table[task_it].timeout )
             {
-            	timestamp[task_it] = wdt_if_get_systick();
+                timestamp[task_it] = wdt_if_get_systick();
 
-            	// Clear number of reports
-            	g_wdt_ctrl.stats[task_it].num_of_reports = 0;
+                // Clear number of reports
+                g_wdt_ctrl.stats[task_it].num_of_reports = 0;
             }
         }
     }
@@ -346,11 +346,11 @@ static void wdt_check_task_reports(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog initialization
+*        Watchdog initialization
 *
 * @note     Must be done only once.
 *
-* @return		status  - Status of initialization
+* @return        status  - Status of initialization
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_init(void)
@@ -402,10 +402,10 @@ wdt_status_t wdt_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get watchdog init flag
+*        Get watchdog init flag
 *
 * @param[in]    p_is_init   - Pointer to init flag
-* @return		status      - Status of operation
+* @return       status      - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_is_init(bool * const p_is_init)
@@ -426,7 +426,7 @@ wdt_status_t wdt_is_init(bool * const p_is_init)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Main watchdog handler
+*        Main watchdog handler
 *
 * @brief    It is recommended that this handler is called from high priority
 *           task or ISR in order to get consistent WDT process period!
@@ -438,7 +438,7 @@ wdt_status_t wdt_is_init(bool * const p_is_init)
 *           WDT timer window size in order to have a propper time resolution!
 *           E.g. WDT window = 10ms, then this handler shall be called every 1ms
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_hndl(void)
@@ -472,14 +472,14 @@ wdt_status_t wdt_hndl(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Start watchdog
+*        Start watchdog
 *
 * @brief    This function starts watchdog and all protected task shall be ready 
 *           to report within specified timeout time. 
 *
 *           Watchdog cannot be stopped when started.
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_start(void)
@@ -525,13 +525,13 @@ wdt_status_t wdt_start(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Task report 
+*        Task report
 *
 * @brief    Each protected task shall call this function at least once within
 *           specified timeout time period. 
 *
 * @param[in]    task    - Protected task enumeration
-* @return		status  - Status of operation
+* @return       status  - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_task_report(const wdt_task_opt_t task)
@@ -670,14 +670,14 @@ wdt_status_t wdt_task_get_enable(const wdt_task_opt_t task, bool * const p_enabl
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Early wakeup watchdog reset callback
+*        Early wakeup watchdog reset callback
 *
 * @brief    User shall define definition of that function. 
 *           Common usage is to log error data into some NVM space.
 *
 * @note     Not all uC periphery support interrupt before watchdog kill...
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 __WDT_WEAK_FNC__ void wdt_pre_reset_isr_callback(void)
