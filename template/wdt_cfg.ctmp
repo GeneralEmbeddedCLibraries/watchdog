@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Ziga Miklosic
+// Copyright (c) 2024 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog configurations
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      27.08.2023
-*@version   V1.1.0
+*@date      02.07.2023
+*@version   V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -39,17 +39,15 @@ static const wdt_cfg_t g_wdt_cfg_table[eWDT_TASK_NUM_OF] =
     // USER CODE START...
 
     // --------------------------------------------------------------------------------------------------
-	//	                        Task name			        Report timeout [ms]	    Enable flag
+    //	                        Task name			Report timeout [ms]	        Enable default
     // --------------------------------------------------------------------------------------------------
 
-	// TODO: Enable !!!
-	[eWDT_TASK_DRIVE_APP]   = { .p_name = "Drive App",        .timeout=100UL,       .enable=false    },
+    [eWDT_TASK_COM]         = { .p_name = "COM",        .timeout = 1000UL,      .enable = true              },
+    [eWDT_TASK_HMI]         = { .p_name = "HMI",        .timeout = 5000UL,      .enable = true              },
+    [eWDT_TASK_COM_NSU]     = { .p_name = "COM_NSU",    .timeout = 15000UL,     .enable = false             },
+    [eWDT_TASK_COM_ESF]     = { .p_name = "COM_ESF",    .timeout = 5000UL,      .enable = false             },
 
-	// TODO: Uncomment when needed
-#if 0
-	[eWDT_TASK_CUR_REG]     = { .p_name = "Current reg",      .timeout=10UL,        .enable=false   },
-	[eWDT_TASK_VEL_REG]     = { .p_name = "Velocity reg",     .timeout=10UL,        .enable=false   },
-#endif
+    // NOTE: HC task has highest priority, thus handling watchdog and dedicated task is not needed!
 
     // USER CODE END...
 };

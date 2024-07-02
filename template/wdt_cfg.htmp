@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Ziga Miklosic
+// Copyright (c) 2024 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog Configurations
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      27.08.2023
-*@version   V1.1.0
+*@date      02.07.2023
+*@version   V1.2.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -48,14 +48,10 @@ typedef enum
 {
 	// USER CODE START...
 
-	eWDT_TASK_DRIVE_APP = 0,    /**<Drive application task */
-
-	// TODO: Uncommend when needed!
-#if 0
-	eWDT_TASK_COM,              /**<Communication task */
-	eWDT_TASK_CUR_REG,          /**<Current regulator ISR */
-	eWDT_TASK_VEL_REG,          /**<Velocity regulator ISR */
-#endif
+	eWDT_TASK_COM = 0,      /**<Communication task */
+	eWDT_TASK_HMI,          /**<Human Machine Interface task */
+	eWDT_TASK_COM_NSU,      /**<Nordic serial upgrade task */
+	eWDT_TASK_COM_ESF,      /**<Espresive serial upgrade task */
 
 	// USER CODE END...
 
@@ -81,7 +77,7 @@ typedef enum
  * 
  * 	Unit: ms
  */
-#define WDT_CFG_MAX_TIMEOUT_TIME_MS				( 5000.0f )
+#define WDT_CFG_MAX_TIMEOUT_TIME_MS				( 20000.0f )
 
 /**
  * 	Minimum timeout time for Watchdog timer
@@ -98,7 +94,7 @@ typedef enum
  * @note	WDT_CFG_DEBUG_EN macro must be enabled in order
  * 			to support statistics.
  */
-#define WDT_CFG_STATS_EN						( 1 )
+#define WDT_CFG_STATS_EN						( 0 )
 
 /**
  * 	Platform weak definition
