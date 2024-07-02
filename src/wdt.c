@@ -141,28 +141,25 @@ static void wdt_check_task_reports  (void);
 ////////////////////////////////////////////////////////////////////////////////
 static void wdt_kick_hndl(void)
 {
-    uint32_t timestamp = 0UL;
-
-    // Get current timestamp
-    timestamp = wdt_if_get_systick();
-
-    // Its time to kick the dog
-    if ((uint32_t)( timestamp - g_wdt_ctrl.last_kick ) >= WDT_CFG_KICK_PERIOD_TIME_MS )
+    // All WDT task reported in time
+    if ( true == g_wdt_ctrl.valid )
     {
-        g_wdt_ctrl.last_kick = timestamp;
+        // Get current timestamp
+        const uint32_t timestamp = wdt_if_get_systick();
 
-        // Alles gut
-        if ( true == g_wdt_ctrl.valid )
+        // Its time to kick the dog
+        if ((uint32_t)( timestamp - g_wdt_ctrl.last_kick ) >= WDT_CFG_KICK_PERIOD_TIME_MS )
         {
+            g_wdt_ctrl.last_kick = timestamp;
+
+            // Kick WDT
             wdt_if_kick();
         }
     }
 
     #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-
     	// Number of reports count handler
     	wdt_stats_count_hndl();
-
     #endif
 }
 
@@ -548,33 +545,27 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
     {
         if ( task < eWDT_TASK_NUM_OF )
         {
-            // Get mutex
-            if ( eWDT_OK == wdt_if_aquire_mutex())
-            {
-                // Get timestamp
-                const uint32_t timestamp = wdt_if_get_systick();
+            // Get timestamp
+            const uint32_t timestamp = wdt_if_get_systick();
 
-                // Perform statistics
-                #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-
+            // Perform statistics
+            #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
+                // Get mutex
+                if ( eWDT_OK == wdt_if_aquire_mutex())
+                {
                     // Calculate statistics
                     wdt_stats_calc( task, timestamp, g_wdt_ctrl.task[task].report_timestamp );
 
                     // Put to trace buffer
                     wdt_trace_buffer_put( task );
 
-                #endif
+                    // Release mutex
+                    wdt_if_release_mutex();
+                }
+            #endif
 
-				// Store report timestamp
-				g_wdt_ctrl.task[task].report_timestamp = timestamp;
-
-                // Release mutex
-                wdt_if_release_mutex();
-            }
-            else
-            {
-                status = eWDT_ERROR;
-            }
+            // Store report timestamp
+            g_wdt_ctrl.task[task].report_timestamp = timestamp;
         }
         else
         {
@@ -614,7 +605,10 @@ wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
         if ( task < eWDT_TASK_NUM_OF )
         {
             // Get mutex
-            if ( eWDT_OK == wdt_if_aquire_mutex())
+            status = wdt_if_aquire_mutex();
+
+            // Get mutex
+            if ( eWDT_OK == status )
             {
                 // Reset task timestamp and enable/disable it
                 g_wdt_ctrl.task[task].report_timestamp  = wdt_if_get_systick();
@@ -622,10 +616,6 @@ wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
 
                 // Release mutex
                 wdt_if_release_mutex();
-            }
-            else
-            {
-                status = eWDT_ERROR;
             }
         }
         else
