@@ -47,14 +47,15 @@ root/middleware/watchdog/watchdog/"module_space"
  ## API
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
-| **wdt_init** | Initialization of watchdog | wdt_status_t wdt_init(void) |
-| **wdt_is_init** | Get initialization flag | wdt_status_t 	wdt_is_init(bool * const p_is_init) |
-| **wdt_hndl** | Main watchdog handler | wdt_status_t wdt_hndl(void) |
-| **wdt_start** | Start watchdog | wdt_status_t wdt_start(void) |
-| **wdt_task_report** | Report to watchdog | wdt_status_t wdt_task_report(const wdt_task_t task) |
-| **wdt_pre_reset_isr_callback** | Watchdog pre-reset callback | void wdt_pre_reset_isr_callback(void) |
+| **wdt_init**                      | Initialization of watchdog            | wdt_status_t wdt_init(void) |
+| **wdt_is_init**                   | Get initialization flag               | wdt_status_t 	wdt_is_init(bool * const p_is_init) |
+| **wdt_hndl**                      | Main watchdog handler                 | wdt_status_t wdt_hndl(void) |
+| **wdt_start**                     | Start watchdog                        | wdt_status_t wdt_start(void) |
+| **wdt_task_report**               | Report to watchdog                    | wdt_status_t wdt_task_report(const wdt_task_t task) |
+| **wdt_task_set_enable**           | Enable/Disable task from protection   | wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable) |
+| **wdt_task_get_enable**           | Get task protection enable state      | wdt_status_t wdt_task_get_enable(const wdt_task_opt_t task, bool * const p_enable) |
+| **wdt_pre_reset_isr_callback**    | Watchdog pre-reset callback           | void wdt_pre_reset_isr_callback(void) |
 	
-
 ## How to use
 1. List all protected task inside **wdt_cfg.h** file:
 ```C
@@ -67,14 +68,15 @@ typedef enum
 {
 	// USER CODE START...
 
-	eWDT_TASK_1 = 0,
-	eWDT_TASK_2,
-	eWDT_TASK_3,
+	eWDT_TASK_COM = 0,      /**<Communication task */
+	eWDT_TASK_HMI,          /**<Human Machine Interface task */
+	eWDT_TASK_COM_NSU,      /**<Nordic serial upgrade task */
+	eWDT_TASK_COM_ESF,      /**<Espresive serial upgrade task */
 
 	// USER CODE END...
 
 	eWDT_TASK_NUM_OF
-} wdt_task_t;
+} wdt_task_opt_t;
 ```
 
 2. Set up configuration table inside **wdt_cfg.c** file:
@@ -86,24 +88,21 @@ typedef enum
 static const wdt_cfg_t g_wdt_cfg_table[eWDT_TASK_NUM_OF] = 
 {
     // USER CODE START...
-
-	// ------------------------------------------------------------------
-	//	Task name			    Report timeout [ms]	    Enable flag 	
-	// ------------------------------------------------------------------
-    { .p_name = "Task 1",      .timeout=100UL,         .enable=true        }
-    { .p_name = "Task 2",      .timeout=2000UL,        .enable=true        }
-
-
-    // Example for enable usage
-    #if ( RELEASE_MODE )
-        { .p_name = "Task 3",    .timeout=500UL,         .enable=false    }
-    #else
-        { .p_name = "Task 3",    .timeout=500UL,         .enable=true     }
-    #endif
-    // ------------------------------------------------------------------
-
+    
+    // --------------------------------------------------------------------------------------------------
+    //	                        Task name               Report timeout [ms]	    Enable default
+    // --------------------------------------------------------------------------------------------------
+    
+    [eWDT_TASK_COM]         = { .p_name = "COM",        .timeout = 1000UL,      .enable = true              },
+    [eWDT_TASK_HMI]         = { .p_name = "HMI",        .timeout = 5000UL,      .enable = true              },
+    [eWDT_TASK_COM_NSU]     = { .p_name = "COM_NSU",    .timeout = 15000UL,     .enable = false             },
+    [eWDT_TASK_COM_ESF]     = { .p_name = "COM_ESF",    .timeout = 5000UL,      .enable = false             },
+    
+    // NOTE: HC task has highest priority, thus handling watchdog and dedicated task is not needed!
+    
     // USER CODE END...
-}
+};
+
 ```
 
 3. Initialize & start:
