@@ -15,8 +15,8 @@
 *@addtogroup WATCHDOG_CONFIGURATIONS
 * @{ <!-- BEGIN GROUP -->
 *
-* 	Put code that is platform depended inside code block start with
-* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
+*     Put code that is platform depended inside code block start with
+*     "USER_CODE_BEGIN" and with end of "USER_CODE_END".
 */
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef __WDT_CFG_H
@@ -40,104 +40,104 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * 		Watchdog protected task list
+ *         Watchdog protected task list
  * 
- * @brief	User shall list all protected task here! 
+ * @brief    User shall list all protected task here!
  */
 typedef enum
 {
-	// USER CODE START...
+    // USER CODE START...
 
-	eWDT_TASK_COM = 0,      /**<Communication task */
-	eWDT_TASK_HMI,          /**<Human Machine Interface task */
-	eWDT_TASK_COM_NSU,      /**<Nordic serial upgrade task */
-	eWDT_TASK_COM_ESF,      /**<Espresive serial upgrade task */
+    eWDT_TASK_COM = 0,      /**<Communication task */
+    eWDT_TASK_HMI,          /**<Human Machine Interface task */
+    eWDT_TASK_COM_NSU,      /**<Nordic serial upgrade task */
+    eWDT_TASK_COM_ESF,      /**<Espresive serial upgrade task */
 
-	// USER CODE END...
+    // USER CODE END...
 
-	eWDT_TASK_NUM_OF
+    eWDT_TASK_NUM_OF
 } wdt_task_opt_t;
 
 /**
- * 	Watchdog kick period
+ *     Watchdog kick period
  *
- * @note	This define must correspond to WDT timer open window settings!
+ * @note    This define must correspond to WDT timer open window settings!
  *
- * 			Period number must be whole number of time period of
- * 			main watchdog handler calls ( wdt_hndl ).
+ *             Period number must be whole number of time period of
+ *             main watchdog handler calls ( wdt_hndl ).
  *
- * 	Unit: ms
+ *     Unit: ms
  */
-#define WDT_CFG_KICK_PERIOD_TIME_MS				( 1.0f )
+#define WDT_CFG_KICK_PERIOD_TIME_MS             ( 1.0f )
 
 /**
- * 	Maximum timeout time for Watchdog timer
+ *     Maximum timeout time for Watchdog timer
  *
- * 	@note 	This is being used only for configuration table checks!
+ *     @note     This is being used only for configuration table checks!
  * 
- * 	Unit: ms
+ *     Unit: ms
  */
-#define WDT_CFG_MAX_TIMEOUT_TIME_MS				( 20000.0f )
+#define WDT_CFG_MAX_TIMEOUT_TIME_MS             ( 20000.0f )
 
 /**
- * 	Minimum timeout time for Watchdog timer
+ *     Minimum timeout time for Watchdog timer
  *
- * 	@note 	This is being used only for configuration table checks!
+ *     @note     This is being used only for configuration table checks!
  * 
- * 	Unit: ms
+ *     Unit: ms
  */
-#define WDT_CFG_MIN_TIMEOUT_TIME_MS				( 10.0f )
+#define WDT_CFG_MIN_TIMEOUT_TIME_MS             ( 10.0f )
 
 /**
- * 	Enable/Disable statistics
+ *     Enable/Disable statistics
  *
- * @note	WDT_CFG_DEBUG_EN macro must be enabled in order
- * 			to support statistics.
+ * @note    WDT_CFG_DEBUG_EN macro must be enabled in order
+ *             to support statistics.
  */
-#define WDT_CFG_STATS_EN						( 0 )
+#define WDT_CFG_STATS_EN                        ( 1 )
 
 /**
- * 	Platform weak definition
+ *     Platform weak definition
  */
-#define __WDT_WEAK_FNC__						__attribute__((weak))
+#define __WDT_WEAK_FNC__                        __attribute__((weak))
 
 /**
- * 	Enable/Disable debug mode
+ *     Enable/Disable debug mode
  */
-#define WDT_CFG_DEBUG_EN						( 1 )
+#define WDT_CFG_DEBUG_EN                        ( 1 )
 
 /**
- * 	Enable/Disable assertions
+ *     Enable/Disable assertions
  */
-#define WDT_CFG_ASSERT_EN						( 1 )
+#define WDT_CFG_ASSERT_EN                        ( 1 )
 
 /**
- * 	Debug communication port macros
+ *     Debug communication port macros
  */
 #if ( 1 == WDT_CFG_DEBUG_EN )
-	#define WDT_DBG_PRINT( ... )				( cli_printf( __VA_ARGS__ ))
+    #define WDT_DBG_PRINT( ... )                ( cli_printf( __VA_ARGS__ ))
 #else
-	#define WDT_DBG_PRINT( ... )				{ ; }
+    #define WDT_DBG_PRINT( ... )                { ; }
 
 #endif
 
 /**
- * 	 Assertion macros
+ *      Assertion macros
  */
 #if ( 1 == WDT_CFG_ASSERT_EN )
-	#define WDT_ASSERT(x)						PROJ_CFG_ASSERT(x)
+    #define WDT_ASSERT(x)                        PROJ_CFG_ASSERT(x)
 #else
-	#define WDT_ASSERT(x)						{ ; }
+    #define WDT_ASSERT(x)                        { ; }
 #endif
 
 /**
- * 	Watchdog configuration table
+ *     Watchdog configuration table
  */
 typedef struct
 {
-	const char *	p_name;		/**<Name of protected task */
-	uint32_t		timeout;	/**<Timeout time in ms */
-	bool			enable;		/**<Protection enable/disable */
+    const char *    p_name;     /**<Name of protected task */
+    uint32_t        timeout;    /**<Timeout time in ms */
+    bool            enable;     /**<Protection enable/disable */
 } wdt_cfg_t;
 
 ////////////////////////////////////////////////////////////////////////////////

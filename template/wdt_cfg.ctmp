@@ -15,8 +15,8 @@
 * @addtogroup WATCHDOG CONFIGURATIONS
 * @{ <!-- BEGIN GROUP -->
 *
-* 	Put code that is platform depended inside code block start with
-* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
+*     Put code that is platform depended inside code block start with
+*     "USER_CODE_BEGIN" and with end of "USER_CODE_END".
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -39,7 +39,7 @@ static const wdt_cfg_t g_wdt_cfg_table[eWDT_TASK_NUM_OF] =
     // USER CODE START...
 
     // --------------------------------------------------------------------------------------------------
-    //	                        Task name			Report timeout [ms]	        Enable default
+    //                            Task name            Report timeout [ms]            Enable default
     // --------------------------------------------------------------------------------------------------
 
     [eWDT_TASK_COM]         = { .p_name = "COM",        .timeout = 1000UL,      .enable = true              },
@@ -58,9 +58,9 @@ static const wdt_cfg_t g_wdt_cfg_table[eWDT_TASK_NUM_OF] =
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get watchdog configuration table
+*        Get watchdog configuration table
 *
-* @return		pointer to configuration table
+* @return        pointer to configuration table
 */
 ////////////////////////////////////////////////////////////////////////////////
 const wdt_cfg_t * wdt_cfg_get_table(void)

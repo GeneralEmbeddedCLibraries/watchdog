@@ -33,12 +33,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
-wdt_status_t 	wdt_if_init				(void);
-wdt_status_t	wdt_if_start			(void);
-wdt_status_t 	wdt_if_kick				(void);
-uint32_t		wdt_if_get_systick		(void);
-wdt_status_t	wdt_if_aquire_mutex		(void);
-wdt_status_t	wdt_if_release_mutex	(void);
+wdt_status_t    wdt_if_init             (void);
+wdt_status_t    wdt_if_start            (void);
+wdt_status_t    wdt_if_kick             (void);
+uint32_t        wdt_if_get_systick      (void);
+wdt_status_t    wdt_if_aquire_mutex     (void);
+wdt_status_t    wdt_if_release_mutex    (void);
 
 #endif // __WDT_IF_H
 

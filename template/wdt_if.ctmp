@@ -15,8 +15,8 @@
 * @addtogroup WATCHDOG CONFIGURATIONS
 * @{ <!-- BEGIN GROUP -->
 *
-* 	Put code that is platform depended inside code block start with
-* 	"USER_CODE_BEGIN" and with end of "USER_CODE_END".
+*     Put code that is platform depended inside code block start with
+*     "USER_CODE_BEGIN" and with end of "USER_CODE_END".
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -44,11 +44,11 @@
 // USER DEFINITIONS BEGIN...
 
 /**
- * 	Watchdog mutex timeout
+ *     Watchdog mutex timeout
  *
- * 	Unit: ms
+ *     Unit: ms
  */
-#define WDT_CFG_MUTEX_TIMEOUT_MS				( 10 )
+#define WDT_CFG_MUTEX_TIMEOUT_MS                ( 10 )
 
 // USER DEFINITIONS END...
 
@@ -59,13 +59,13 @@
 // USER VARIABLES BEGIN...
 
 /**
- * 	Watchdog OS mutex
+ *     Watchdog OS mutex
  */
-static osMutexId_t	g_wdt_mutex_id = NULL;
+static osMutexId_t  g_wdt_mutex_id = NULL;
 const osMutexAttr_t g_wdt_mutex_attr =
 {
-    .name 		= "watchdog",
-    .attr_bits 	= ( osMutexPrioInherit ),
+    .name       = "WDT",
+    .attr_bits  = ( osMutexPrioInherit ),
 };
 
 // USER VARIABLES END...
@@ -80,12 +80,12 @@ const osMutexAttr_t g_wdt_mutex_attr =
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog platform initilization
+*        Watchdog platform initilization
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_if_init(void)
@@ -112,12 +112,12 @@ wdt_status_t wdt_if_init(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog platform WDT timer start
+*        Watchdog platform WDT timer start
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_if_start(void)
@@ -135,12 +135,12 @@ wdt_status_t wdt_if_start(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog platform WDT timer kick
+*        Watchdog platform WDT timer kick
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_if_kick(void)
@@ -158,12 +158,12 @@ wdt_status_t wdt_if_kick(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get platform system ticks
+*        Get platform system ticks
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
 *
-* @return		systick - System time ticks 
+* @return        systick - System time ticks
 */
 ////////////////////////////////////////////////////////////////////////////////
 uint32_t wdt_if_get_systick(void)
@@ -181,7 +181,7 @@ uint32_t wdt_if_get_systick(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Get watchdog mutex
+*        Get watchdog mutex
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
@@ -189,7 +189,7 @@ uint32_t wdt_if_get_systick(void)
 *           Return eWDT_OK if successfully acquire otherwise
 *           return eWDT_ERROR
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_if_aquire_mutex(void)
@@ -198,10 +198,10 @@ wdt_status_t wdt_if_aquire_mutex(void)
 
     // USER CODE START...
 
-	if ( osOK != osMutexAcquire( g_wdt_mutex_id, WDT_CFG_MUTEX_TIMEOUT_MS ))
-	{
-	    status = eWDT_ERROR;
-	}
+    if ( osOK != osMutexAcquire( g_wdt_mutex_id, WDT_CFG_MUTEX_TIMEOUT_MS ))
+    {
+        status = eWDT_ERROR;
+    }
 
     // USER CODE END...
 
@@ -210,7 +210,7 @@ wdt_status_t wdt_if_aquire_mutex(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Release watchdog mutex
+*        Release watchdog mutex
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
@@ -218,7 +218,7 @@ wdt_status_t wdt_if_aquire_mutex(void)
 *           Return /ref eWDT_OK if successfully acquire otherwise 
 *           return /ref eWDT_ERROR
 *
-* @return		status - Status of operation
+* @return        status - Status of operation
 */
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_if_release_mutex(void)
@@ -236,7 +236,7 @@ wdt_status_t wdt_if_release_mutex(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
-*		Watchdog pre-reset ISR 
+*        Watchdog pre-reset ISR
 *
 * @note     User shall provide definition of that function based 
 *           on used platform!
@@ -248,7 +248,7 @@ wdt_status_t wdt_if_release_mutex(void)
 *
 * @endcode
 *
-* @return		void
+* @return        void
 */
 ////////////////////////////////////////////////////////////////////////////////
 // TODO: ...
