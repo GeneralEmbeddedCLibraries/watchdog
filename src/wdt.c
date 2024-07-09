@@ -179,11 +179,11 @@ static void wdt_check_task_reports(void)
         if ( true == g_wdt_ctrl.task[task_it].enable )
         {
             // Get time from last report
-            const uint32_t time_pass = (uint32_t)((uint32_t) wdt_if_get_systick() - g_wdt_ctrl.task[task_it].report_timestamp );
+            const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
 
             // Task not reported in specified time
             // Kill me...
-            if ( time_pass > gp_wdt_cfg_table[task_it].timeout )
+            if ( time_pass > ((int32_t) gp_wdt_cfg_table[task_it].timeout ))
             {
                 g_wdt_ctrl.valid = false;
 
