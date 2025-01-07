@@ -179,6 +179,8 @@ static void wdt_check_task_reports(void)
         if ( true == g_wdt_ctrl.task[task_it].enable )
         {
             // Get time from last report
+            // NOTE: Using int32_t as if "wdt_if_get_systick()" returns smaller value that "g_wdt_ctrl.task[task_it].report_timestamp" it will calcualte negative time_pass.
+            // This is workaround, as "get_systick()" function is buggy in nRF52 platform and it migth return smaller value than "report_timestamp" wihtout overflow event!
             const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
 
             // Task not reported in specified time
