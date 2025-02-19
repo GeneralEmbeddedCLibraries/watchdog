@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project/module adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
+## V1.2.1 - xx.xx.2025
+
+### Changed
+ - Task time pass calculations
+ - Changed "wdt_task_set_enable", added check for change
+
+### Todo
+ - ISR support before reset event
+---
 ## V1.2.0 - 02.07.2024
 
 ### Added
@@ -15,7 +24,6 @@ and this project/module adheres to [Semantic Versioning](https://semver.org/spec
 
 ### Todo
  - ISR support before reset event
- - Replace OS mutex with simple lock inside module
 
 ---
 ## V1.1.0 - 27.08.2023
