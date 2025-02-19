@@ -606,18 +606,22 @@ wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
     {
         if ( task < eWDT_TASK_NUM_OF )
         {
-            // Get mutex
-            status = wdt_if_aquire_mutex();
-
-            // Get mutex
-            if ( eWDT_OK == status )
+            // State changed?
+            if ( g_wdt_ctrl.task[task].enable != enable )
             {
-                // Reset task timestamp and enable/disable it
-                g_wdt_ctrl.task[task].report_timestamp  = wdt_if_get_systick();
-                g_wdt_ctrl.task[task].enable            = enable;
+                // Get mutex
+                status = wdt_if_aquire_mutex();
 
-                // Release mutex
-                wdt_if_release_mutex();
+                // Get mutex
+                if ( eWDT_OK == status )
+                {
+                    // Reset task timestamp and enable/disable it
+                    g_wdt_ctrl.task[task].report_timestamp  = wdt_if_get_systick();
+                    g_wdt_ctrl.task[task].enable            = enable;
+
+                    // Release mutex
+                    wdt_if_release_mutex();
+                }
             }
         }
         else
