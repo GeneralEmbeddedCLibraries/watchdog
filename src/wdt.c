@@ -22,6 +22,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdatomic.h>
+
 #include "wdt.h"
 #include "../../wdt_if.h"
 
@@ -68,8 +70,8 @@
  */
 typedef struct
 {
-    uint32_t    report_timestamp;   /**<Timestamp of last task report */
-    bool        enable;             /**<Task enable state */
+	_Atomic uint32_t report_timestamp;   /**<Timestamp of last task report */
+    _Atomic bool   	 enable;             /**<Task enable state */
 } wdt_task_t;
 
 /**
@@ -144,17 +146,25 @@ static void wdt_kick_hndl(void)
     // All WDT task reported in time
     if ( true == g_wdt_ctrl.valid )
     {
-        // Get current timestamp
-        const uint32_t timestamp = wdt_if_get_systick();
+		#if ( 0 == WDT_CFG_KICK_PERIOD_TIME_MS )
 
-        // Its time to kick the dog
-        if ((uint32_t)( timestamp - g_wdt_ctrl.last_kick ) >= WDT_CFG_KICK_PERIOD_TIME_MS )
-        {
-            g_wdt_ctrl.last_kick = timestamp;
+		    // Kick WDT
+		    wdt_if_kick();
 
-            // Kick WDT
-            wdt_if_kick();
-        }
+		#else
+		    // Get current timestamp
+		    const uint32_t timestamp = wdt_if_get_systick();
+
+		    // Its time to kick the dog
+		    if ((uint32_t)( timestamp - g_wdt_ctrl.last_kick ) >= WDT_CFG_KICK_PERIOD_TIME_MS )
+		    {
+		        g_wdt_ctrl.last_kick = timestamp;
+
+		        // Kick WDT
+		        wdt_if_kick();
+		    }
+		#endif
+        
     }
 
     #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
@@ -172,36 +182,32 @@ static void wdt_kick_hndl(void)
 ////////////////////////////////////////////////////////////////////////////////
 static void wdt_check_task_reports(void)
 {
-
-	//if ( eWDT_OK == wdt_if_aquire_mutex())
+	// Check each task
+	for ( wdt_task_opt_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
 	{
-		// Check each task
-		for ( wdt_task_opt_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
+		// Is task protection enabled
+		if ( true == atomic_load_explicit( &g_wdt_ctrl.task[task_it].enable, memory_order_relaxed ))
 		{
-			// Is task protection enabled
-			if ( true == g_wdt_ctrl.task[task_it].enable )
+			// Get time from last report
+			// NOTE: Using int32_t as if "wdt_if_get_systick()" returns smaller value that "g_wdt_ctrl.task[task_it].report_timestamp" it will calcualte negative time_pass.
+			// This is workaround, as "get_systick()" function is buggy in nRF52 platform and it migth return smaller value than "report_timestamp" wihtout overflow event!
+			//const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
+
+			// TODO: Clean that up!
+	
+			const uint32_t time_pass = (uint32_t)( wdt_if_get_systick() - atomic_load_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, memory_order_relaxed ));
+
+			// Task not reported in specified time
+			// Kill me...
+			if ( time_pass > gp_wdt_cfg_table[task_it].timeout )
 			{
-				// Get time from last report
-				// NOTE: Using int32_t as if "wdt_if_get_systick()" returns smaller value that "g_wdt_ctrl.task[task_it].report_timestamp" it will calcualte negative time_pass.
-				// This is workaround, as "get_systick()" function is buggy in nRF52 platform and it migth return smaller value than "report_timestamp" wihtout overflow event!
-				//const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
+				g_wdt_ctrl.valid = false;
 
-				const uint32_t time_pass = (uint32_t)( wdt_if_get_systick() - g_wdt_ctrl.task[task_it].report_timestamp );
+				WDT_DBG_PRINT( "Task %s not reported in time!", gp_wdt_cfg_table[task_it].p_name );
 
-				// Task not reported in specified time
-				// Kill me...
-				if ( time_pass > gp_wdt_cfg_table[task_it].timeout )
-				{
-					g_wdt_ctrl.valid = false;
-
-					WDT_DBG_PRINT( "Task %s not reported in time!", gp_wdt_cfg_table[task_it].p_name );
-
-					break;
-				}
+				break;
 			}
 		}
-
-		//wdt_if_release_mutex();
 	}
 }
 
@@ -383,10 +389,14 @@ wdt_status_t wdt_init(void)
                 g_wdt_ctrl.start = false;
                 WDT_DBG_PRINT( "WDT init success!" );
 
-                // Set default tasks enable
+                // Get current timestamp
+                const uint32_t timestamp = wdt_if_get_systick();
+
+                // Init watchdog tasks
                 for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
                 {
-                    g_wdt_ctrl.task[task_it].enable = gp_wdt_cfg_table[task_it].enable;
+         			atomic_store_explicit( &g_wdt_ctrl.task[task_it].enable, gp_wdt_cfg_table[task_it].enable, memory_order_relaxed );
+         			atomic_store_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, timestamp, memory_order_relaxed );
                 }
 
                 // Init stats
@@ -509,7 +519,7 @@ wdt_status_t wdt_start(void)
 
         for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
-            g_wdt_ctrl.task[task_it].report_timestamp = timestamp;
+        	atomic_store_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, timestamp, memory_order_relaxed );
         }
 
         // Start WDT 
@@ -555,31 +565,27 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
     {
         if ( task < eWDT_TASK_NUM_OF )
         {
-            // Get timestamp
-            const uint32_t timestamp = wdt_if_get_systick();
+			// Get timestamp
+			const uint32_t timestamp = wdt_if_get_systick();
 
-            // Get mutex
-            if ( eWDT_OK == wdt_if_aquire_mutex())
-            {
+		// Perform statistics
+		#if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
+			// Get mutex
+			if ( eWDT_OK == wdt_if_aquire_mutex())
+			{
+				// Calculate statistics
+				wdt_stats_calc( task, timestamp, g_wdt_ctrl.task[task].report_timestamp );
 
-            // Perform statistics
-            #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-
-                    // Calculate statistics
-                    wdt_stats_calc( task, timestamp, g_wdt_ctrl.task[task].report_timestamp );
-
-                    // Put to trace buffer
-                    wdt_trace_buffer_put( task );
-
-
-            #endif
-
-				// Store report timestamp
-				g_wdt_ctrl.task[task].report_timestamp = timestamp;
+				// Put to trace buffer
+				wdt_trace_buffer_put( task );
 
 				// Release mutex
 				wdt_if_release_mutex();
 			}
+		#endif
+
+			// Store report timestamp
+			atomic_store_explicit( &g_wdt_ctrl.task[task].report_timestamp, timestamp, memory_order_relaxed );
         }
         else
         {
@@ -619,21 +625,12 @@ wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
         if ( task < eWDT_TASK_NUM_OF )
         {
             // State changed?
-            if ( g_wdt_ctrl.task[task].enable != enable )
+            if ( enable != atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed ))
             {
-                // Get mutex
-                status = wdt_if_aquire_mutex();
+				const uint32_t timestamp = wdt_if_get_systick();
 
-                // Get mutex
-                if ( eWDT_OK == status )
-                {
-                    // Reset task timestamp and enable/disable it
-                    g_wdt_ctrl.task[task].report_timestamp  = wdt_if_get_systick();
-                    g_wdt_ctrl.task[task].enable            = enable;
-
-                    // Release mutex
-                    wdt_if_release_mutex();
-                }
+				atomic_store_explicit( &g_wdt_ctrl.task[task].report_timestamp, timestamp, memory_order_relaxed );
+				atomic_store_explicit( &g_wdt_ctrl.task[task].enable, enable, memory_order_relaxed );
             }
         }
         else
@@ -671,7 +668,7 @@ wdt_status_t wdt_task_get_enable(const wdt_task_opt_t task, bool * const p_enabl
         if  (   ( task < eWDT_TASK_NUM_OF )
             &&  ( NULL != p_enable ))
         {
-            *p_enable = g_wdt_ctrl.task[task].enable;
+            *p_enable = atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed );
         }
         else
         {
