@@ -71,15 +71,6 @@ typedef enum
 #define WDT_CFG_KICK_PERIOD_TIME_MS             ( 1.0f )
 
 /**
- *     Maximum timeout time for Watchdog timer
- *
- *     @note     This is being used only for configuration table checks!
- * 
- *     Unit: ms
- */
-#define WDT_CFG_MAX_TIMEOUT_TIME_MS             ( 20000.0f )
-
-/**
  *     Minimum timeout time for Watchdog timer
  *
  *     @note     This is being used only for configuration table checks!

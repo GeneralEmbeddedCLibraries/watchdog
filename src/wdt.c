@@ -172,29 +172,37 @@ static void wdt_kick_hndl(void)
 ////////////////////////////////////////////////////////////////////////////////
 static void wdt_check_task_reports(void)
 {
-    // Check each task
-    for ( uint32_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
-    {
-        // Is task protection enabled
-        if ( true == g_wdt_ctrl.task[task_it].enable )
-        {
-            // Get time from last report
-            // NOTE: Using int32_t as if "wdt_if_get_systick()" returns smaller value that "g_wdt_ctrl.task[task_it].report_timestamp" it will calcualte negative time_pass.
-            // This is workaround, as "get_systick()" function is buggy in nRF52 platform and it migth return smaller value than "report_timestamp" wihtout overflow event!
-            const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
 
-            // Task not reported in specified time
-            // Kill me...
-            if ( time_pass > ((int32_t) gp_wdt_cfg_table[task_it].timeout ))
-            {
-                g_wdt_ctrl.valid = false;
+	//if ( eWDT_OK == wdt_if_aquire_mutex())
+	{
+		// Check each task
+		for ( wdt_task_opt_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
+		{
+			// Is task protection enabled
+			if ( true == g_wdt_ctrl.task[task_it].enable )
+			{
+				// Get time from last report
+				// NOTE: Using int32_t as if "wdt_if_get_systick()" returns smaller value that "g_wdt_ctrl.task[task_it].report_timestamp" it will calcualte negative time_pass.
+				// This is workaround, as "get_systick()" function is buggy in nRF52 platform and it migth return smaller value than "report_timestamp" wihtout overflow event!
+				//const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
 
-                WDT_DBG_PRINT( "Task %s not reported in time!", gp_wdt_cfg_table[task_it].p_name );
+				const uint32_t time_pass = (uint32_t)( wdt_if_get_systick() - g_wdt_ctrl.task[task_it].report_timestamp );
 
-                break;
-            }
-        }
-    }
+				// Task not reported in specified time
+				// Kill me...
+				if ( time_pass > gp_wdt_cfg_table[task_it].timeout )
+				{
+					g_wdt_ctrl.valid = false;
+
+					WDT_DBG_PRINT( "Task %s not reported in time!", gp_wdt_cfg_table[task_it].p_name );
+
+					break;
+				}
+			}
+		}
+
+		//wdt_if_release_mutex();
+	}
 }
 
 #if (  WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN  )
@@ -550,24 +558,28 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
             // Get timestamp
             const uint32_t timestamp = wdt_if_get_systick();
 
+            // Get mutex
+            if ( eWDT_OK == wdt_if_aquire_mutex())
+            {
+
             // Perform statistics
             #if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-                // Get mutex
-                if ( eWDT_OK == wdt_if_aquire_mutex())
-                {
+
                     // Calculate statistics
                     wdt_stats_calc( task, timestamp, g_wdt_ctrl.task[task].report_timestamp );
 
                     // Put to trace buffer
                     wdt_trace_buffer_put( task );
 
-                    // Release mutex
-                    wdt_if_release_mutex();
-                }
+
             #endif
 
-            // Store report timestamp
-            g_wdt_ctrl.task[task].report_timestamp = timestamp;
+				// Store report timestamp
+				g_wdt_ctrl.task[task].report_timestamp = timestamp;
+
+				// Release mutex
+				wdt_if_release_mutex();
+			}
         }
         else
         {
