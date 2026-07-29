@@ -53,12 +53,12 @@ root/middleware/watchdog/watchdog/"module_space"
 | API Functions | Description | Prototype |
 | --- | ----------- | ----- |
 | **wdt_init**                      | Initialization of watchdog            | wdt_status_t wdt_init(void) |
-| **wdt_is_init**                   | Get initialization flag               | wdt_status_t 	wdt_is_init(bool * const p_is_init) |
+| **wdt_is_init**                   | Get initialization flag               | bool wdt_is_init(void) |
 | **wdt_hndl**                      | Main watchdog handler                 | wdt_status_t wdt_hndl(void) |
 | **wdt_start**                     | Start watchdog                        | wdt_status_t wdt_start(void) |
-| **wdt_task_report**               | Report to watchdog                    | wdt_status_t wdt_task_report(const wdt_task_t task) |
+| **wdt_task_report**               | Report to watchdog                    | wdt_status_t wdt_task_report(const wdt_task_opt_t task) |
 | **wdt_task_set_enable**           | Enable/Disable task from protection   | wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable) |
-| **wdt_task_get_enable**           | Get task protection enable state      | wdt_status_t wdt_task_get_enable(const wdt_task_opt_t task, bool * const p_enable) |
+| **wdt_task_get_enable**           | Get task protection enable state      | bool wdt_task_get_enable(const wdt_task_opt_t task) |
 | **wdt_pre_reset_isr_callback**    | Watchdog pre-reset callback           | void wdt_pre_reset_isr_callback(void) |
 	
 ## How to use

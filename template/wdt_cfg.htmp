@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Ziga Miklosic
+// Copyright (c) 2026 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog Configurations
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      02.07.2023
-*@version   V1.2.0
+*@date      29.07.2026
+*@version   V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -19,8 +19,8 @@
 *     "USER_CODE_BEGIN" and with end of "USER_CODE_END".
 */
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __WDT_CFG_H
-#define __WDT_CFG_H
+#ifndef WDT_CFG_H
+#define WDT_CFG_H
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
@@ -74,19 +74,19 @@ typedef enum
  *     Maximum timeout time for Watchdog timer
  *
  *     @note     This is being used only for configuration table checks!
- * 
+ *
  *     Unit: ms
  */
-#define WDT_CFG_MAX_TIMEOUT_TIME_MS             ( 20000.0f )
+#define WDT_CFG_MAX_TIMEOUT_TIME_MS             ( 60000U )
 
 /**
  *     Minimum timeout time for Watchdog timer
  *
  *     @note     This is being used only for configuration table checks!
- * 
+ *
  *     Unit: ms
  */
-#define WDT_CFG_MIN_TIMEOUT_TIME_MS             ( 10.0f )
+#define WDT_CFG_MIN_TIMEOUT_TIME_MS             ( 10U )
 
 /**
  *     Enable/Disable statistics
@@ -110,6 +110,12 @@ typedef enum
  *     Enable/Disable assertions
  */
 #define WDT_CFG_ASSERT_EN                        ( 1 )
+
+// Disable debug prints in releases
+#ifndef DEBUG
+    #undef WDT_CFG_DEBUG_EN
+    #define WDT_CFG_DEBUG_EN 0
+#endif
 
 /**
  *     Debug communication port macros
@@ -145,7 +151,7 @@ typedef struct
 ////////////////////////////////////////////////////////////////////////////////
 const wdt_cfg_t * wdt_cfg_get_table(void);
 
-#endif // __WDT_CFG_H
+#endif // WDT_CFG_H
 
 ////////////////////////////////////////////////////////////////////////////////
 /**

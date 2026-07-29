@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Ziga Miklosic
+// Copyright (c) 2026 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog Platform Interface
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      02.07.2023
-*@version   V1.2.0
+*@date      29.07.2026
+*@version   V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -62,7 +62,7 @@
  *     Watchdog OS mutex
  */
 static osMutexId_t  g_wdt_mutex_id = NULL;
-const osMutexAttr_t g_wdt_mutex_attr =
+static const osMutexAttr_t g_wdt_mutex_attr =
 {
     .name       = "WDT",
     .attr_bits  = ( osMutexPrioInherit ),
@@ -103,7 +103,10 @@ wdt_status_t wdt_if_init(void)
     }
 
     // Init LL watchdog driver
-    status = (wdt_status_t) iwdt_init();
+    if ( eWDT_OK == status )
+    {
+        status = (wdt_status_t) iwdt_init();
+    }
 
     // USER CODE END...
 
@@ -227,7 +230,8 @@ wdt_status_t wdt_if_release_mutex(void)
 
     // USER CODE START...
 
-    osMutexRelease( g_wdt_mutex_id );
+    // Release failure has no recovery action available to the caller; discard.
+    (void) osMutexRelease( g_wdt_mutex_id );
 
     // USER CODE END...
 
