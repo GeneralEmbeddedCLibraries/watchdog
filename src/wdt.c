@@ -570,7 +570,7 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
 			if ( eWDT_OK == wdt_if_aquire_mutex())
 			{
 				// Calculate statistics
-				wdt_stats_calc( task, timestamp, g_wdt_ctrl.task[task].report_timestamp );
+				wdt_stats_calc( task, timestamp, atomic_load_explicit( &g_wdt_ctrl.task[task].report_timestamp, memory_order_relaxed ));
 
 				// Put to trace buffer
 				wdt_trace_buffer_put( task );
