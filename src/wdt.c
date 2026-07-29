@@ -367,77 +367,54 @@ static void wdt_check_task_reports(void)
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_init(void)
 {
-    wdt_status_t status = eWDT_OK;
+    // Already init -> skip
+    if ( wdt_is_init()) return eWDT_OK;
 
-    if ( false == gb_is_init )
+    // Get configuration table
+    gp_wdt_cfg_table = wdt_cfg_get_table();
+    WDT_ASSERT( NULL != gp_wdt_cfg_table )
+
+    // Initialize WDT platform dependent stuff
+    if ( eWDT_OK == wdt_if_init())
     {
-        // Get configuration table
-        gp_wdt_cfg_table = wdt_cfg_get_table();
+        gb_is_init = true;
+        g_wdt_ctrl.start = false;
+        WDT_DBG_PRINT( "WDT init success!" );
 
-        if ( NULL != gp_wdt_cfg_table )
+        // Get current timestamp
+        const uint32_t timestamp = wdt_if_get_systick();
+
+        // Init watchdog tasks
+        for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
-            // Initialize WDT platform dependent stuff
-            status = wdt_if_init();
-
-            if ( eWDT_OK == status )
-            {
-                gb_is_init = true;
-                g_wdt_ctrl.start = false;
-                WDT_DBG_PRINT( "WDT init success!" );
-
-                // Get current timestamp
-                const uint32_t timestamp = wdt_if_get_systick();
-
-                // Init watchdog tasks
-                for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
-                {
-         			atomic_store_explicit( &g_wdt_ctrl.task[task_it].enable, gp_wdt_cfg_table[task_it].enable, memory_order_relaxed );
-         			atomic_store_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, timestamp, memory_order_relaxed );
-                }
-
-                // Init stats
-                #if (  WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN  )
-                    wdt_stats_init();
-                #endif
-            }
-            else
-            {
-                status = eWDT_ERROR_INIT;
-                WDT_DBG_PRINT( "WDT init error: Function wdt_if_init() failed..." );
-            }
+            atomic_store_explicit( &g_wdt_ctrl.task[task_it].enable, gp_wdt_cfg_table[task_it].enable, memory_order_relaxed );
+            atomic_store_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, timestamp, memory_order_relaxed );
         }
-        else
-        {
-            status = eWDT_ERROR_INIT;
-            WDT_DBG_PRINT( "WDT init error: Configuration table missing..." );
-        }
+
+        // Init stats
+        #if (  WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN  )
+            wdt_stats_init();
+        #endif
+
+        return eWDT_OK;
     }
-
-    return status;
+    else
+    {
+        WDT_DBG_PRINT( "WDT init error: Function wdt_if_init() failed..." );
+        return eWDT_ERROR_INIT;        
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *        Get watchdog init flag
 *
-* @param[in]    p_is_init   - Pointer to init flag
-* @return       status      - Status of operation
+* @return       Initialization state
 */
 ////////////////////////////////////////////////////////////////////////////////
-wdt_status_t wdt_is_init(bool * const p_is_init)
+bool wdt_is_init(void)
 {
-    wdt_status_t status = eWDT_OK;
-
-    if ( NULL != p_is_init)
-    {
-        *p_is_init = gb_is_init;
-    }
-    else
-    {
-        status = eWDT_ERROR;
-    }
-
-    return status;
+    return gb_is_init;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -459,31 +436,19 @@ wdt_status_t wdt_is_init(bool * const p_is_init)
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_hndl(void)
 {
-    wdt_status_t status = eWDT_OK;
+    WDT_ASSERT( true == wdt_is_init());
+    if ( true != wdt_is_init()) return eWDT_ERROR_INIT;
 
-    WDT_ASSERT( true == gb_is_init );
-
-    if ( true == gb_is_init )
+    if ( true == g_wdt_ctrl.start )
     {
-        if ( true == g_wdt_ctrl.start )
-        {
-            // Check that alles is gut
-            wdt_check_task_reports();
+        // Check that alles is gut
+        wdt_check_task_reports();
 
-            // Handle WDT kicking
-            wdt_kick_hndl();
-        }
-        else
-        {
-            status = eWDT_ERROR;
-        }
-    }
-    else
-    {
-        status = eWDT_ERROR_INIT;
+        // Handle WDT kicking
+        wdt_kick_hndl();
     }
 
-    return status;
+    return eWDT_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -500,43 +465,33 @@ wdt_status_t wdt_hndl(void)
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_start(void)
 {
-    wdt_status_t status = eWDT_OK;
+    WDT_ASSERT( true == wdt_is_init());
+    if ( true != wdt_is_init()) return eWDT_ERROR_INIT;
 
-    WDT_ASSERT( true == gb_is_init );
+    // Get current timestamp
+    const uint32_t timestamp = wdt_if_get_systick();
 
-    if ( true == gb_is_init )
-    {   
-        // Get current timestamp
-        const uint32_t timestamp = wdt_if_get_systick();
+    // Init WDT controls
+    g_wdt_ctrl.last_kick    = timestamp;
+    g_wdt_ctrl.valid        = true;
 
-        // Init WDT controls
-        g_wdt_ctrl.last_kick    = timestamp;
-        g_wdt_ctrl.valid        = true;
+    for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
+    {
+        atomic_store_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, timestamp, memory_order_relaxed );
+    }
 
-        for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
-        {
-        	atomic_store_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, timestamp, memory_order_relaxed );
-        }
-
-        // Start WDT 
-        status = wdt_if_start();
-
-        if ( eWDT_OK == status )
-        {
-            g_wdt_ctrl.start = true;
-            WDT_DBG_PRINT( "WDT has been started!" );
-        }
-        else
-        {
-            WDT_DBG_PRINT( "WDT start error..." );
-        }
+    // Start WDT 
+    if ( eWDT_OK == wdt_if_start())
+    {
+        g_wdt_ctrl.start = true;
+        WDT_DBG_PRINT( "WDT has been started!" );
+        return eWDT_OK;
     }
     else
     {
-        status = eWDT_ERROR_INIT;
+        WDT_DBG_PRINT( "WDT start error..." );
+        return eWDT_ERROR;
     }
-
-    return status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -552,48 +507,35 @@ wdt_status_t wdt_start(void)
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_task_report(const wdt_task_opt_t task)
 {
-    wdt_status_t status = eWDT_OK;
+    WDT_ASSERT( true == wdt_is_init());
+    if ( true != wdt_is_init()) return eWDT_ERROR_INIT;
 
-    WDT_ASSERT( true == gb_is_init );
     WDT_ASSERT( task < eWDT_TASK_NUM_OF );
+    if ( task >= eWDT_TASK_NUM_OF ) return eWDT_ERROR;
 
-    if ( true == gb_is_init )
+    // Get timestamp
+    const uint32_t timestamp = wdt_if_get_systick();
+
+// Perform statistics
+#if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
+    // Get mutex
+    if ( eWDT_OK == wdt_if_aquire_mutex())
     {
-        if ( task < eWDT_TASK_NUM_OF )
-        {
-			// Get timestamp
-			const uint32_t timestamp = wdt_if_get_systick();
+        // Calculate statistics
+        wdt_stats_calc( task, timestamp, atomic_load_explicit( &g_wdt_ctrl.task[task].report_timestamp, memory_order_relaxed ));
 
-		// Perform statistics
-		#if ( WDT_CFG_STATS_EN && WDT_CFG_DEBUG_EN )
-			// Get mutex
-			if ( eWDT_OK == wdt_if_aquire_mutex())
-			{
-				// Calculate statistics
-				wdt_stats_calc( task, timestamp, atomic_load_explicit( &g_wdt_ctrl.task[task].report_timestamp, memory_order_relaxed ));
+        // Put to trace buffer
+        wdt_trace_buffer_put( task );
 
-				// Put to trace buffer
-				wdt_trace_buffer_put( task );
-
-				// Release failure has no recovery action available here; discard.
-				(void) wdt_if_release_mutex();
-			}
-		#endif
-
-			// Store report timestamp
-			atomic_store_explicit( &g_wdt_ctrl.task[task].report_timestamp, timestamp, memory_order_relaxed );
-        }
-        else
-        {
-            status = eWDT_ERROR;
-        }
+        // Release failure has no recovery action available here; discard.
+        (void) wdt_if_release_mutex();
     }
-    else
-    {
-        status = eWDT_ERROR_INIT;
-    }
+#endif
 
-    return status;
+    // Store report timestamp
+    atomic_store_explicit( &g_wdt_ctrl.task[task].report_timestamp, timestamp, memory_order_relaxed );
+
+    return eWDT_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -611,72 +553,39 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
 ////////////////////////////////////////////////////////////////////////////////
 wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
 {
-    wdt_status_t status = eWDT_OK;
+    WDT_ASSERT( true == wdt_is_init());
+    if ( true != wdt_is_init()) return eWDT_ERROR_INIT;
 
-    WDT_ASSERT( true == gb_is_init );
     WDT_ASSERT( task < eWDT_TASK_NUM_OF );
+    if ( task >= eWDT_TASK_NUM_OF ) return eWDT_ERROR;
 
-    if ( true == gb_is_init )
+    // State changed?
+    if ( enable != atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed ))
     {
-        if ( task < eWDT_TASK_NUM_OF )
-        {
-            // State changed?
-            if ( enable != atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed ))
-            {
-				const uint32_t timestamp = wdt_if_get_systick();
-
-				atomic_store_explicit( &g_wdt_ctrl.task[task].report_timestamp, timestamp, memory_order_relaxed );
-				atomic_store_explicit( &g_wdt_ctrl.task[task].enable, enable, memory_order_relaxed );
-            }
-        }
-        else
-        {
-            status = eWDT_ERROR;
-        }
-    }
-    else
-    {
-        status = eWDT_ERROR_INIT;
+        atomic_store_explicit( &g_wdt_ctrl.task[task].report_timestamp, wdt_if_get_systick(), memory_order_relaxed );
+        atomic_store_explicit( &g_wdt_ctrl.task[task].enable, enable, memory_order_relaxed );
     }
 
-    return status;
+    return eWDT_OK;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /**
 *       Get watchdog task enable state
 *
-* @param[in]    task        - Protected task enumeration
-* @param[out]   p_enable    - State of protected task enable
-* @return       status      - Status of operation
+* @param[in]    task - Protected task enumeration
+* @return       State of protected task enable
 */
 ////////////////////////////////////////////////////////////////////////////////
-wdt_status_t wdt_task_get_enable(const wdt_task_opt_t task, bool * const p_enable)
+bool wdt_task_get_enable(const wdt_task_opt_t task)
 {
-    wdt_status_t status = eWDT_OK;
+    WDT_ASSERT( true == wdt_is_init());
+    if ( true != wdt_is_init()) return eWDT_ERROR_INIT;
 
-    WDT_ASSERT( true == gb_is_init );
     WDT_ASSERT( task < eWDT_TASK_NUM_OF );
-    WDT_ASSERT( NULL != p_enable );
+    if ( task >= eWDT_TASK_NUM_OF ) return eWDT_ERROR;
 
-    if ( true == gb_is_init )
-    {
-        if  (   ( task < eWDT_TASK_NUM_OF )
-            &&  ( NULL != p_enable ))
-        {
-            *p_enable = atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed );
-        }
-        else
-        {
-            status = eWDT_ERROR;
-        }
-    }
-    else
-    {
-        status = eWDT_ERROR_INIT;
-    }
-
-    return status;
+    return atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
