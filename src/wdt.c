@@ -148,8 +148,8 @@ static void wdt_kick_hndl(void)
     {
 		#if ( 0 == WDT_CFG_KICK_PERIOD_TIME_MS )
 
-		    // Kick WDT
-		    wdt_if_kick();
+		    // Kick failure has no recovery action available here; discard.
+		    (void) wdt_if_kick();
 
 		#else
 		    // Get current timestamp
@@ -160,8 +160,8 @@ static void wdt_kick_hndl(void)
 		    {
 		        g_wdt_ctrl.last_kick = timestamp;
 
-		        // Kick WDT
-		        wdt_if_kick();
+		        // Kick failure has no recovery action available here; discard.
+		        (void) wdt_if_kick();
 		    }
 		#endif
         
@@ -188,13 +188,9 @@ static void wdt_check_task_reports(void)
 		// Is task protection enabled
 		if ( true == atomic_load_explicit( &g_wdt_ctrl.task[task_it].enable, memory_order_relaxed ))
 		{
-			// Get time from last report
-			// NOTE: Using int32_t as if "wdt_if_get_systick()" returns smaller value that "g_wdt_ctrl.task[task_it].report_timestamp" it will calcualte negative time_pass.
-			// This is workaround, as "get_systick()" function is buggy in nRF52 platform and it migth return smaller value than "report_timestamp" wihtout overflow event!
-			//const int32_t time_pass = (int32_t)(((uint32_t) wdt_if_get_systick()) - g_wdt_ctrl.task[task_it].report_timestamp );
-
-			// TODO: Clean that up!
-	
+			// Get time from last report. Unsigned subtraction wraps modulo 2^32, so this
+			// stays correct across systick rollover as long as the elapsed time never
+			// exceeds ~49.7 days.
 			const uint32_t time_pass = (uint32_t)( wdt_if_get_systick() - atomic_load_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, memory_order_relaxed ));
 
 			// Task not reported in specified time
@@ -290,7 +286,7 @@ static void wdt_check_task_reports(void)
     ////////////////////////////////////////////////////////////////////////////////
     static void wdt_stats_clear_counts(void)
     {
-        for ( uint32_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
+        for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
             g_wdt_ctrl.stats[task_it].num_of_reports = 0;
         }
@@ -330,7 +326,7 @@ static void wdt_check_task_reports(void)
     {
         static uint32_t timestamp[eWDT_TASK_NUM_OF] = {0};
 
-        for ( uint32_t task_it = 0; task_it < eWDT_TASK_NUM_OF; task_it++ )
+        for ( uint32_t task_it = 0U; task_it < eWDT_TASK_NUM_OF; task_it++ )
         {
             // Timeout window
             if ((uint32_t)( wdt_if_get_systick() - timestamp[task_it] ) >= gp_wdt_cfg_table[task_it].timeout )
@@ -579,8 +575,8 @@ wdt_status_t wdt_task_report(const wdt_task_opt_t task)
 				// Put to trace buffer
 				wdt_trace_buffer_put( task );
 
-				// Release mutex
-				wdt_if_release_mutex();
+				// Release failure has no recovery action available here; discard.
+				(void) wdt_if_release_mutex();
 			}
 		#endif
 
