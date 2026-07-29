@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Ziga Miklosic
+// Copyright (c) 2026 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog API
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      02.07.2023
-*@version   V1.2.0
+*@date      29.07.2026
+*@version   V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /**
@@ -33,8 +33,8 @@
 /**
  *     Module version
  */
-#define WDT_VER_MAJOR           ( 1 )
-#define WDT_VER_MINOR           ( 2 )
+#define WDT_VER_MAJOR           ( 2 )
+#define WDT_VER_MINOR           ( 0 )
 #define WDT_VER_DEVELOP         ( 0 )
 
 /**

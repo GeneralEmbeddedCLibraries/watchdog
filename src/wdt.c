@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Ziga Miklosic
+// Copyright (c) 2026 Ziga Miklosic
 // All Rights Reserved
 // This software is under MIT licence (https://opensource.org/licenses/MIT)
 ////////////////////////////////////////////////////////////////////////////////
@@ -7,8 +7,8 @@
 *@brief     Watchdog
 *@author    Ziga Miklosic
 *@email     ziga.miklosic@gmail.com
-*@date      02.07.2023
-*@version   V1.2.0
+*@date      29.07.2026
+*@version   V2.0.0
 */
 ////////////////////////////////////////////////////////////////////////////////
 /*!
@@ -188,9 +188,7 @@ static void wdt_check_task_reports(void)
 		// Is task protection enabled
 		if ( true == atomic_load_explicit( &g_wdt_ctrl.task[task_it].enable, memory_order_relaxed ))
 		{
-			// Get time from last report. Unsigned subtraction wraps modulo 2^32, so this
-			// stays correct across systick rollover as long as the elapsed time never
-			// exceeds ~49.7 days.
+			// Get time pass from last report
 			const uint32_t time_pass = (uint32_t)( wdt_if_get_systick() - atomic_load_explicit( &g_wdt_ctrl.task[task_it].report_timestamp, memory_order_relaxed ));
 
 			// Task not reported in specified time
