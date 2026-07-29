@@ -580,10 +580,10 @@ wdt_status_t wdt_task_set_enable(const wdt_task_opt_t task, const bool enable)
 bool wdt_task_get_enable(const wdt_task_opt_t task)
 {
     WDT_ASSERT( true == wdt_is_init());
-    if ( true != wdt_is_init()) return eWDT_ERROR_INIT;
+    if ( true != wdt_is_init()) return false;
 
     WDT_ASSERT( task < eWDT_TASK_NUM_OF );
-    if ( task >= eWDT_TASK_NUM_OF ) return eWDT_ERROR;
+    if ( task >= eWDT_TASK_NUM_OF ) return false;
 
     return atomic_load_explicit( &g_wdt_ctrl.task[task].enable, memory_order_relaxed );
 }
